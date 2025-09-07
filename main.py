@@ -1,6 +1,5 @@
 from pytubefix import Search
 from song import Song
-from queue_handler import queue
 from media_scanner import scan_queue
 import datetime, time, threading
 
@@ -33,7 +32,7 @@ def add_song_to_queue(song: Song):
         queue_condition.notify()
 
 def start_scanner():
-    scan_queue(queue, queue_condition)  # This should be a function that loops and plays songs from the queue
+    scan_queue(queue, queue_condition)
 
 scanner_thread = threading.Thread(target=start_scanner, daemon=True)
 scanner_thread.start()
