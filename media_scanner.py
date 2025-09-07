@@ -32,17 +32,17 @@ def scan_queue(queue: list, queue_condition):
                 stream_url = info['url']
 
             cmd = [
-                'vlc',
+                'cvlc',
                 '--intf', 'rc',
-                '--rc-fake-tty',
                 '--no-video',
+                '--aout', 'alsa',  # force ALSA output
                 stream_url
             ]
             vlc_process = subprocess.Popen(
                 cmd,
                 stdin=subprocess.PIPE,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                # stdout=subprocess.DEVNULL,
+                # stderr=subprocess.DEVNULL
             )
             vlc_process.wait()
             vlc_process = None
