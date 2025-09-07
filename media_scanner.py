@@ -22,7 +22,7 @@ def scan_queue(queue: list, queue_condition):
 
         # Use yt-dlp to extract the direct audio URL
         ydl_opts = {
-            'format': 'bestaudio/best',
+            'format': 'bestaudio[ext=m4a]/bestaudio/best',
             'quiet': True,
             'skip_download': True,
         }
@@ -35,7 +35,6 @@ def scan_queue(queue: list, queue_condition):
                 'cvlc',
                 '--intf', 'rc',
                 '--no-video',
-                '--aout', 'alsa',  # force ALSA output
                 stream_url
             ]
             vlc_process = subprocess.Popen(
