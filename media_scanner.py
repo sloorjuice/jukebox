@@ -35,6 +35,7 @@ def scan_queue(queue: list, queue_condition):
                 'cvlc',
                 '--intf', 'rc',
                 '--no-video',
+                '--play-and-exit', 
                 stream_url
             ]
             vlc_process = subprocess.Popen(
