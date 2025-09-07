@@ -1,6 +1,11 @@
 from pytubefix import Search
-from media_player import play_song
 from song import Song
+from queue_handler import queue
+from media_scanner import scan_queue
+import datetime, time, threading
+
+queue = []
+queue_condition = threading.Condition()
 
 def search_song(search_prompt: str) -> tuple[str, str, int, str]:
     """Takes in a search prompt and finds a respective video on youtube and returns the title, link, duration and author"""
@@ -20,23 +25,22 @@ def search_song(search_prompt: str) -> tuple[str, str, int, str]:
         #song_released = first_video.publish_date
     return song_link, song_name, song_duration, song_author
 
+def add_song_to_queue(song: Song):
+    print(f"[{datetime.now()}] Adding song to queue {song.name} by {song.author} (Duration: {datetime.timedelta(seconds=song.duration)})")
 
+    with queue_condition:
+        queue.append(song)
+        queue_condition.notify()
 
-# we need to find out when a song is done playing so we can set playing to false and pop the first item out the queue. 
+def start_scanner():
+    scan_queue(queue, queue_condition)  # This should be a function that loops and plays songs from the queue
 
+scanner_thread = threading.Thread(target=start_scanner, daemon=True)
+scanner_thread.start()
 
-#queue = []
-current_song = None
-playing = False
-    
 while True:
     song_search_prompt = input("\nSearch for a song > ")
     song_url, song_name, song_duration, song_author = search_song(song_search_prompt)
     song = Song(song_name, song_url, song_duration, song_author)
-    #queue.append(song)
-    if not playing:
-        #playing = True # Set playing to false once a song ends
-        #play_song(queue[0])
-        play_song(song)
-    else:
-        continue
+    add_song_to_queue(song)
+    time.sleep(1)  # Wait until the song starts playing
