@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from main import search_song, add_song_to_queue, queue
 from song import Song
-from media_scanner import stop_playback
+from media_scanner import pause_playback, skip_playback
 
 app = FastAPI()
 
@@ -23,11 +23,22 @@ def request_song(song_request: song_request):
 def get_queue():
     return [{"name": s.name, "author": s.author, "Duratio": s.duration} for s in queue]
 
-@app.post("/stop")
-def pause():
+@app.post("/pauseToggle")
+def pauseToggle():
     try:
-        stop_playback()
+        pause_playback()
         return {"status": "stopped current song"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/skip")
+def skip():
+    try:
+        skip_playback()
+        return {"status": "stopped current song"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+    
     

@@ -1,4 +1,4 @@
-import yt_dlp, subprocess
+import yt_dlp, subprocess, sys
 
 vlc_process = None
 
@@ -8,8 +8,14 @@ def send_vlc_command(command: str):
         vlc_process.stdin.write((command + '\n').encode())
         vlc_process.stdin.flush()
 
-def stop_playback():
+def pause_playback():
     send_vlc_command('pause')
+
+def skip_playback():
+    """Skips the current VLC playback."""
+    global vlc_process
+    if vlc_process and vlc_process.poll() is None:
+        send_vlc_command('stop')
 
 def scan_queue(queue: list, queue_condition):
     global vlc_process
@@ -31,8 +37,16 @@ def scan_queue(queue: list, queue_condition):
                 info = ydl.extract_info(Song.url, download=False)
                 stream_url = info['url']
 
+            # Choose VLC command based on OS
+            if sys.platform.startswith('linux'):
+                vlc_cmd = 'cvlc'
+            elif sys.platform == 'darwin':
+                vlc_cmd = 'vlc'
+            else:
+                raise Exception("Unsupported OS for VLC playback")
+
             cmd = [
-                'cvlc',
+                vlc_cmd,
                 '--intf', 'rc',
                 '--no-video',
                 '--play-and-exit', 
