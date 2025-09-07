@@ -1,6 +1,18 @@
 import yt_dlp, subprocess
 
+vlc_process = None
+
+def send_vlc_command(command: str):
+    global vlc_process
+    if vlc_process and vlc_process.stdin:
+        vlc_process.stdin.write((command + '\n').encode())
+        vlc_process.stdin.flush()
+
+def stop_playback():
+    send_vlc_command('pause')
+
 def scan_queue(queue: list, queue_condition):
+    global vlc_process
     while True:
         with queue_condition:
             while not queue:
@@ -21,11 +33,18 @@ def scan_queue(queue: list, queue_condition):
 
             cmd = [
                 'vlc',
-                '--intf', 'dummy',
-                '--play-and-exit',
+                '--intf', 'rc',
+                '--rc-fake-tty',
                 '--no-video',
                 stream_url
             ]
-            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            vlc_process = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            vlc_process.wait()
+            vlc_process = None
         except Exception as e:
             print(f"Error playing song: {e}")

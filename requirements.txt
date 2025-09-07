@@ -1,2 +1,5 @@
 pytubefix
 yt_dlp
+fastapi
+uvicorn
+pydantic

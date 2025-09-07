@@ -72,9 +72,10 @@ if not is_vlc_installed():
 else:
     print("Vlc Installed Already.")
 
-while True:
-    song_search_prompt = input("\nSearch for a song > ")
-    song_url, song_name, song_duration, song_author = search_song(song_search_prompt)
-    song = Song(song_name, song_url, song_duration, song_author)
-    add_song_to_queue(song)
-    time.sleep(1)  # Wait until the song starts playing
+if __name__ == "__main__":
+    while True:
+        song_search_prompt = input("\nSearch for a song > ")
+        song_url, song_name, song_duration, song_author = search_song(song_search_prompt)
+        song = Song(song_name, song_url, song_duration, song_author)
+        add_song_to_queue(song)
+        time.sleep(1)  # Wait until the song starts playing
