@@ -1,12 +1,6 @@
 from pytubefix import Search
-
-class Song:
-    """Simple object to represent songs. Duration is in seconds."""
-    def __init__(self, name: str, url:str, duration:int, author:str):
-        self.name = name
-        self.url = url
-        self.duration = duration
-        self.author = author
+from media_player import play_song
+from song import Song
 
 def search_song(search_prompt: str) -> tuple[str, str, int, str]:
     """Takes in a search prompt and finds a respective video on youtube and returns the title, link, duration and author"""
@@ -26,10 +20,7 @@ def search_song(search_prompt: str) -> tuple[str, str, int, str]:
         #song_released = first_video.publish_date
     return song_link, song_name, song_duration, song_author
 
-def play_song(song: Song):
-    """Plays a song"""
-    print(f"\nPlaying {song.name}")
-    return
+
 
 # we need to find out when a song is done playing so we can set playing to false and pop the first item out the queue. 
 
