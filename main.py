@@ -27,6 +27,7 @@ def search_song(search_prompt: str) -> tuple[str, str, int, str]:
     return song_link, song_name, song_duration, song_author
 
 def add_song_to_queue(song: Song):
+    """Adds a song to the queue"""
     print(f"[{datetime.now()}] Adding song to queue {song.name} by {song.author} (Duration: {timedelta(seconds=song.duration)})")
 
     with queue_condition:
