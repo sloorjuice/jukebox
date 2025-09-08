@@ -3,8 +3,11 @@ from pydantic import BaseModel
 from main import search_song, add_song_to_queue, queue
 from song import Song
 from media_scanner import pause_playback, skip_playback
+import json, os
 
 app = FastAPI()
+
+CURRENT_SONG = os.path.join(os.path.dirname(__file__), "logs", "currently_playing.json")
 
 class song_request(BaseModel):
     prompt: str
@@ -23,11 +26,22 @@ def request_song(song_request: song_request):
 def get_queue():
     return [{"name": s.name, "author": s.author, "Duratio": s.duration} for s in queue]
 
+@app.get("/currentlyPlayingSong")
+def get_currently_playing():
+    try:
+        with open(CURRENT_SONG, "r") as f:
+            data = json.load(f)
+        return data
+    except FileNotFoundError:
+        return None
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/pauseToggle")
 def pauseToggle():
     try:
         pause_playback()
-        return {"status": "stopped current song"}
+        return {"status": "toggled pause/play"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -35,10 +49,9 @@ def pauseToggle():
 def skip():
     try:
         skip_playback()
-        return {"status": "stopped current song"}
+        return {"status": "skipped current song"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-    
-    
+

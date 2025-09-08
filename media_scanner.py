@@ -1,6 +1,9 @@
 import yt_dlp, subprocess, sys
+from utils.logger import write_current_song
 
 vlc_process = None
+
+
 
 def send_vlc_command(command: str):
     global vlc_process
@@ -19,11 +22,13 @@ def skip_playback():
 
 def scan_queue(queue: list, queue_condition):
     global vlc_process
+    global currently_playing_song
     while True:
         with queue_condition:
             while not queue:
                 queue_condition.wait()
             Song = queue.pop(0)
+            write_current_song(Song)
         print(f"\nPlaying {Song.name}")
 
         # Use yt-dlp to extract the direct audio URL
@@ -60,5 +65,6 @@ def scan_queue(queue: list, queue_condition):
             )
             vlc_process.wait()
             vlc_process = None
+            write_current_song(None)
         except Exception as e:
             print(f"Error playing song: {e}")

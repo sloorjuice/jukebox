@@ -41,6 +41,7 @@ def is_vlc_installed() -> bool:
 def start_scanner():
     scan_queue(queue, queue_condition)
 
+
 scanner_thread = threading.Thread(target=start_scanner, daemon=True)
 scanner_thread.start()
 
