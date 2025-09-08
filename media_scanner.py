@@ -1,8 +1,12 @@
 import yt_dlp, subprocess, sys
 from utils.logger import write_current_song, write_played_song
 from song import Song
+import threading
+import time
 
 vlc_process = None
+audio_url_cache = {}
+CACHE_SIZE = 5
 
 # Use yt-dlp to extract the direct audio URL
 ydl_opts = {
@@ -26,6 +30,20 @@ def skip_playback():
     if vlc_process and vlc_process.poll() is None:
         send_vlc_command('stop')
 
+def prefetch_audio_urls(queue, queue_condition):
+    while True:
+        with queue_condition:
+            # This will copy all the songs in the queue up until the cache size
+            to_prefetch = queue[:CACHE_SIZE]
+        for song in to_prefetch:
+            if song not in audio_url_cache:
+                try:
+                    url = extract_audio_url(song)
+                    audio_url_cache[song] = url
+                except Exception as e:
+                    print(f"Prefetch error for {song.name}: {e}")
+        time.sleep(2)  # Avoid busy loop
+
 def extract_audio_url(song: Song) -> str:
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(song.url, download=False)
@@ -45,7 +63,10 @@ def scan_queue(queue: list, queue_condition):
         print(f"\nPlaying {song_to_play.name}")
 
         try:
-            stream_url = extract_audio_url(song_to_play)
+            # Use cached URL if available
+            stream_url = audio_url_cache.pop(song_to_play, None)
+            if not stream_url:
+                stream_url = extract_audio_url(song_to_play)
 
             # Choose VLC command based on OS
             if sys.platform.startswith('linux'):

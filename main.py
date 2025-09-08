@@ -1,6 +1,6 @@
 from pytubefix import Search
 from song import Song
-from media_scanner import scan_queue
+from media_scanner import scan_queue, prefetch_audio_urls
 import time, threading, shutil, sys, subprocess
 from datetime import datetime, timedelta
 import platform
@@ -41,7 +41,7 @@ def is_vlc_installed() -> bool:
 def start_scanner():
     scan_queue(queue, queue_condition)
 
-
+threading.Thread(target=prefetch_audio_urls, args=(queue, queue_condition), daemon=True).start()
 scanner_thread = threading.Thread(target=start_scanner, daemon=True)
 scanner_thread.start()
 
