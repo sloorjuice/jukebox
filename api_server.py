@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from main import search_song, add_song_to_queue, queue
 from song import Song
 from media_scanner import pause_playback, skip_playback
+from utils.logger import write_queued_song
 import json, os
 
 app = FastAPI()
@@ -17,6 +18,7 @@ def request_song(song_request: song_request):
     try:
         url, name, duration, author = search_song(song_request.prompt)
         song = Song(name, url, duration, author)
+        write_queued_song(song, song_request.prompt)
         add_song_to_queue(song)
         return {"status": "added", "song": name, "author": author}
     except Exception as e:

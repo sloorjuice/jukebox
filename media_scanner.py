@@ -1,9 +1,15 @@
 import yt_dlp, subprocess, sys
-from utils.logger import write_current_song
+from utils.logger import write_current_song, write_played_song
+from song import Song
 
 vlc_process = None
 
-
+# Use yt-dlp to extract the direct audio URL
+ydl_opts = {
+    'format': 'bestaudio[ext=m4a]/bestaudio/best',
+    'quiet': True,
+    'skip_download': True,
+}
 
 def send_vlc_command(command: str):
     global vlc_process
@@ -20,6 +26,12 @@ def skip_playback():
     if vlc_process and vlc_process.poll() is None:
         send_vlc_command('stop')
 
+def extract_audio_url(song: Song) -> str:
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(song.url, download=False)
+        stream_url = info['url']
+    return stream_url
+    
 def scan_queue(queue: list, queue_condition):
     global vlc_process
     global currently_playing_song
@@ -27,20 +39,13 @@ def scan_queue(queue: list, queue_condition):
         with queue_condition:
             while not queue:
                 queue_condition.wait()
-            Song = queue.pop(0)
-            write_current_song(Song)
-        print(f"\nPlaying {Song.name}")
+            song_to_play = queue.pop(0)
+            write_current_song(song_to_play)
+            write_played_song(song_to_play)
+        print(f"\nPlaying {song_to_play.name}")
 
-        # Use yt-dlp to extract the direct audio URL
-        ydl_opts = {
-            'format': 'bestaudio[ext=m4a]/bestaudio/best',
-            'quiet': True,
-            'skip_download': True,
-        }
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(Song.url, download=False)
-                stream_url = info['url']
+            stream_url = extract_audio_url(song_to_play)
 
             # Choose VLC command based on OS
             if sys.platform.startswith('linux'):
