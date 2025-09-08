@@ -3,10 +3,11 @@ from song import Song
 from media_scanner import scan_queue, prefetch_audio_urls
 import time, threading, shutil, sys, subprocess
 from datetime import datetime, timedelta
-import platform
+import platform, queue, logging
 
-queue = []
+song_queue = queue.Queue()
 queue_condition = threading.Condition()
+logging.basicConfig(level=logging.INFO)
 
 def search_song(search_prompt: str) -> tuple[str, str, int, str]:
     """Takes in a search prompt and finds a respective video on youtube and returns the title, link, duration and author"""
@@ -28,10 +29,10 @@ def search_song(search_prompt: str) -> tuple[str, str, int, str]:
 
 def add_song_to_queue(song: Song):
     """Adds a song to the queue"""
-    print(f"[{datetime.now()}] Adding song to queue {song.name} by {song.author} (Duration: {timedelta(seconds=song.duration)})")
+    logging.info(f"[{datetime.now()}] Adding song to queue {song.name} by {song.author} (Duration: {timedelta(seconds=song.duration)})")
 
     with queue_condition:
-        queue.append(song)
+        song_queue.put(song)
         queue_condition.notify()
 
 def is_vlc_installed() -> bool:
@@ -39,9 +40,9 @@ def is_vlc_installed() -> bool:
     return shutil.which("vlc") is not None
 
 def start_scanner():
-    scan_queue(queue, queue_condition)
+    scan_queue(song_queue, queue_condition)
 
-threading.Thread(target=prefetch_audio_urls, args=(queue, queue_condition), daemon=True).start()
+threading.Thread(target=prefetch_audio_urls, args=(song_queue, queue_condition), daemon=True).start()
 scanner_thread = threading.Thread(target=start_scanner, daemon=True)
 scanner_thread.start()
 
@@ -65,13 +66,13 @@ if not is_vlc_installed():
             else:
                 cmd = ['sudo', 'apt', 'install', 'vlc']
     else:
-        print("Unsupported OS. Please install VLC manually.")
+        logging.error("Unsupported OS. Please install VLC manually.")
         sys.exit(1)
     c = input("VLC is not installed and is essential for this program, would you like to install it? (y/n)")
     if c == "y":
         subprocess.run(cmd, check=True)
 else:
-    print("Vlc Installed Already.")
+    logging.info("Vlc Installed Already.")
 
 if __name__ == "__main__":
     while True:

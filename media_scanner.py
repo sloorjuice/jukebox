@@ -3,6 +3,8 @@ from utils.logger import write_current_song, write_played_song
 from song import Song
 import threading
 import time
+import logging
+import concurrent.futures
 
 vlc_process = None
 audio_url_cache = {}
@@ -14,6 +16,8 @@ ydl_opts = {
     'quiet': True,
     'skip_download': True,
 }
+
+logging.basicConfig(level=logging.INFO)
 
 def send_vlc_command(command: str):
     global vlc_process
@@ -35,14 +39,20 @@ def prefetch_audio_urls(queue, queue_condition):
         with queue_condition:
             # This will copy all the songs in the queue up until the cache size
             to_prefetch = queue[:CACHE_SIZE]
-        for song in to_prefetch:
-            if song not in audio_url_cache:
-                try:
-                    url = extract_audio_url(song)
-                    audio_url_cache[song] = url
-                except Exception as e:
-                    print(f"Prefetch error for {song.name}: {e}")
-        time.sleep(2)  # Avoid busy loop
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            futures = []
+            for song in to_prefetch:
+                if song not in audio_url_cache:
+                    futures.append(executor.submit(extract_and_cache_url, song))
+            concurrent.futures.wait(futures)
+        time.sleep(0.5)
+                    
+def extract_and_cache_url(song):
+    try:
+        url = extract_audio_url(song)
+        audio_url_cache[song] = url
+    except Exception as e:
+        logging.error(f"Prefetch error for {song.name}: {e}")
 
 def extract_audio_url(song: Song) -> str:
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -57,10 +67,10 @@ def scan_queue(queue: list, queue_condition):
         with queue_condition:
             while not queue:
                 queue_condition.wait()
-            song_to_play = queue.pop(0)
+            song_to_play = queue.get()
             write_current_song(song_to_play)
             write_played_song(song_to_play)
-        print(f"\nPlaying {song_to_play.name}")
+        logging.info(f"Playing {song_to_play.name}")
 
         try:
             # Use cached URL if available
@@ -93,4 +103,4 @@ def scan_queue(queue: list, queue_condition):
             vlc_process = None
             write_current_song(None)
         except Exception as e:
-            print(f"Error playing song: {e}")
+            logging.error(f"Error playing song: {e}")
