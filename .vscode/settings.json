@@ -3,5 +3,17 @@
 		"bestaudio",
 		"intf",
 		"pytubefix"
+	],
+	"python.testing.pytestArgs": [
+		"src"
+	],
+	"python.testing.unittestEnabled": true,
+	"python.testing.pytestEnabled": false,
+	"python.testing.unittestArgs": [
+		"-v",
+		"-s",
+		"./src",
+		"-p",
+		"test_*.py"
 	]
 }

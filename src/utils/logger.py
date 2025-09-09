@@ -1,5 +1,7 @@
 import os, json, datetime
 
+# TODO - Add error logger to log errors to a file with extensive infomation
+
 # TODO - Add logging to skipped songs, log the song skipped and the next song to play
 # TODO - Add logging to paused songs, Log the song that was paused or unpaused
 

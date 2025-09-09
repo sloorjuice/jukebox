@@ -45,11 +45,16 @@ source venv/bin/activate
 ```
 
 3. **Install Python dependencies**
+Use the recommended script
 ```bash
-pip install -r requirements.txt
+# Make the script executable
+chmod +x scripts/install.sh
+
+# Start the API server using the script
+./scripts/installs.sh
 ```
 
-3. **VLC Installation** (if not already installed)
+1. **VLC Installation** (if not already installed)
 The application will automatically detect if VLC is missing and offer to install it:
 - **macOS**: Uses Homebrew (`brew install --cask vlc`)
 - **Linux**: Uses system package manager (apt, dnf, yum, pacman)
@@ -59,14 +64,14 @@ The application will automatically detect if VLC is missing and offer to install
 ### Running the Application
 
 #### Method 1: API Server Mode
-Start the FastAPI server to control the application remotely:
+Start the FastAPI server with the recommended script to control the application remotely:
 
 ```bash
-# Get your local IP address (macOS)
-ipconfig getifaddr en0
+# Make the script executable
+chmod +x scripts/start_server.sh
 
-# Start the API server
-uvicorn src.api_server:app --reload --host 0.0.0.0 --port 8000
+# Start the API server using the script
+./scripts/start_server.sh
 ```
 
 The API will be available at `http://localhost:8000` or `http://your-ip:8000`

@@ -3,3 +3,4 @@ yt_dlp
 fastapi
 uvicorn
 pydantic
+pytest

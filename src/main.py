@@ -12,22 +12,40 @@ logging.basicConfig(
     format='%(levelname)s: %(message)s'
 )
 
-def search_song(search_prompt: str) -> tuple[str, str, int, str]:
+def search_song(search_prompt: str, retries: int = 3, delay: float = 1.0) -> tuple[str, str, int, str]:
     """Takes in a search prompt and finds a respective video on youtube and returns the title, link, duration and author"""
-    results = Search(search_prompt)
+    if not search_prompt:
+        raise ValueError("Search prompt cannot be empty")
+    attempt = 0
+    while attempt < retries:
+        try:
+            results = Search(search_prompt)
+            break
+        except Exception as e:
+            logging.error(f"Network or search error (attempt {attempt+1}/{retries}): {e}")
+            attempt += 1
+            if attempt < retries:
+                time.sleep(delay)
+            else:
+                return None, None, None, None
+    
+    if not results.videos:
+        return None, None, None, None
+    
     #print("Results for search query:")
     #for video in results.videos:
     #    print(f"Title: {video.title}")
     #    print(f"Url: {video.watch_url}")
     #    print(f'Duration: {video.length} sec')
     #    print('---')
-    if results.videos:
-        first_video = results.videos[0]
-        song_name = first_video.title
-        song_link = first_video.watch_url
-        song_duration = first_video.length
-        song_author = first_video.author
-        #song_released = first_video.publish_date
+    
+    first_video = results.videos[0]
+    song_name = first_video.title
+    song_link = first_video.watch_url
+    song_duration = first_video.length
+    song_author = first_video.author
+    #song_released = first_video.publish_date
+    
     return song_link, song_name, song_duration, song_author
 
 def add_song_to_queue(song: Song):
