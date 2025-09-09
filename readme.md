@@ -8,9 +8,9 @@ A Python-powered CLI and API for music streaming that allows you to search for Y
 - 🎛️ **REST API**: Control playback remotely via HTTP endpoints
 - 📱 **Queue Management**: Add, view, and manage your music queue
 - ⏯️ **Playback Controls**: Play, pause, and skip functionality
-- 📊 **Logging System**: Track played and queued songs with timestamps
+- 📊 **Logging System**: Tracks played and queued songs with timestamps
 - 🚀 **Audio Prefetching**: Intelligent caching for smoother playback
-- 🎧 **VLC Integration**: Uses VLC media player for reliable audio playback
+- 🎧 **VLC Integration**: Uses VLC media player for reliable audio playback straight in the terminal, no VLC window or anything
 
 ### Coming Soon
 
@@ -30,20 +30,18 @@ A Python-powered CLI and API for music streaming that allows you to search for Y
 
 1. **Clone the repository**
 ```bash
-git clone <repository-url>
+git clone https://github.com/sloorjuice/jukebox/
 cd music-queue-app
 ```
 
 2. **Create and activate a virtual environment** (recommended)
 ```bash
 # Create virtual environment
-python -m venv music-queue-env
+python -m venv venv
 
 # Activate virtual environment
 # On macOS/Linux:
-source music-queue-env/bin/activate
-# On Windows:
-music-queue-env\Scripts\activate
+source venv/bin/activate
 ```
 
 3. **Install Python dependencies**
@@ -220,10 +218,6 @@ chmod 755 logs
 4. Test thoroughly
 5. Submit a pull request
 
-## License
-
-[Add your license information here]
-
 ## Support
 
-[Add support/contact information here]
+[contact@sloor.dev](mailto:contact@sloor.dev)
