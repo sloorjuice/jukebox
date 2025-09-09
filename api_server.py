@@ -34,7 +34,7 @@ def request_song(song_request: SongRequest):
 
 @app.get("/queue", response_model=list[QueueSong])
 def get_queue():
-    return [QueueSong(name=s.name, author=s.author, duration=s.duration) for s in song_queue]
+    return [QueueSong(name=s.name, author=s.author, duration=s.duration) for s in song_queue.queue]
 
 @app.get("/currentlyPlayingSong")
 def get_currently_playing(current_song_path: str = Depends(get_current_song_path)):

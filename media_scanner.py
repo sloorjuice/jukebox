@@ -17,7 +17,10 @@ ydl_opts = {
     'skip_download': True,
 }
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
 
 def send_vlc_command(command: str):
     global vlc_process
@@ -37,8 +40,8 @@ def skip_playback():
 def prefetch_audio_urls(queue, queue_condition):
     while True:
         with queue_condition:
-            # This will copy all the songs in the queue up until the cache size
-            to_prefetch = queue[:CACHE_SIZE]
+            # Safely peek at the first CACHE_SIZE items in the queue
+            to_prefetch = list(queue.queue)[:CACHE_SIZE]
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             futures = []
             for song in to_prefetch:
@@ -65,7 +68,8 @@ def scan_queue(queue: list, queue_condition):
     global currently_playing_song
     while True:
         with queue_condition:
-            while not queue:
+            while queue.empty():
+                logging.info("Queue is empty, waiting for songs...")
                 queue_condition.wait()
             song_to_play = queue.get()
             write_current_song(song_to_play)

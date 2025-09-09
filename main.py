@@ -7,7 +7,10 @@ import platform, queue, logging
 
 song_queue = queue.Queue()
 queue_condition = threading.Condition()
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
 
 def search_song(search_prompt: str) -> tuple[str, str, int, str]:
     """Takes in a search prompt and finds a respective video on youtube and returns the title, link, duration and author"""
