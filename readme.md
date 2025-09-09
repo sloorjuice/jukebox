@@ -34,18 +34,7 @@ git clone https://github.com/sloorjuice/jukebox/
 cd jukebox
 ```
 
-2. **Create and activate a virtual environment** (recommended)
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-```
-
-3. **Install Python dependencies**
-Use the recommended script
+2. **Install Python dependencies** (Use the recommended script)
 ```bash
 # Make the script executable
 chmod +x scripts/install.sh
