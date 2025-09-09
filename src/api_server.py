@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-from main import search_song, add_song_to_queue, song_queue
-from song import Song
-from media_scanner import pause_playback, skip_playback
-from utils.logger import write_queued_song
 import json, os
+
+from src.main import search_song, add_song_to_queue, song_queue
+from src.song import Song
+from src.media_scanner import pause_playback, skip_playback
+from src.utils.logger import write_queued_song
 
 app = FastAPI()
 

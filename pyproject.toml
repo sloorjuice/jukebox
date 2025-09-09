@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sloorjuke"
+version = "0.3.2"
+description = "A Python-powered jukebox for Raspberry Pi"
+authors = [{name = "sloorjuice", email = "contact@sloor.dev"}]
+license = {text = "MIT"}
+requires-python = ">=3.7"
+dependencies = [
+    "pytubefix",
+    "yt-dlp",
+    "fastapi",
+    "uvicorn",
+    "pydantic"
+]

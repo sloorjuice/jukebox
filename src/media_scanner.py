@@ -1,10 +1,7 @@
-import yt_dlp, subprocess, sys
-from utils.logger import write_current_song, write_played_song
-from song import Song
-import threading
-import time
-import logging
-import concurrent.futures
+from src.utils.logger import write_current_song, write_played_song
+import yt_dlp, subprocess, sys, time, logging, concurrent.futures
+
+from src.song import Song
 
 vlc_process = None
 audio_url_cache = {}

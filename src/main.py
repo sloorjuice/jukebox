@@ -1,9 +1,9 @@
 from pytubefix import Search
-from song import Song
-from media_scanner import scan_queue, prefetch_audio_urls
-import time, threading, shutil, sys, subprocess
 from datetime import datetime, timedelta
-import platform, queue, logging
+import time, threading, shutil, sys, subprocess, platform, queue, logging
+
+from src.song import Song
+from src.media_scanner import scan_queue, prefetch_audio_urls
 
 song_queue = queue.Queue()
 queue_condition = threading.Condition()

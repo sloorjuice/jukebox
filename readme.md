@@ -31,7 +31,7 @@ A Python-powered CLI and API for music streaming that allows you to search for Y
 1. **Clone the repository**
 ```bash
 git clone https://github.com/sloorjuice/jukebox/
-cd music-queue-app
+cd jukebox
 ```
 
 2. **Create and activate a virtual environment** (recommended)
@@ -66,7 +66,7 @@ Start the FastAPI server to control the application remotely:
 ipconfig getifaddr en0
 
 # Start the API server
-uvicorn api_server:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.api_server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 The API will be available at `http://localhost:8000` or `http://your-ip:8000`
@@ -75,7 +75,7 @@ The API will be available at `http://localhost:8000` or `http://your-ip:8000`
 Run the application interactively:
 
 ```bash
-python main.py
+python src/main.py
 ```
 
 ### API Endpoints
