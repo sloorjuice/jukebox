@@ -4,7 +4,6 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from unittest.mock import patch, MagicMock
-# FIX: Import from 'main' to match your project structure and the patch target.
 from src.main import search_song
 
 class TestSearchSong:
