@@ -5,15 +5,28 @@ import time, threading, shutil, sys, subprocess, platform, queue, logging
 from src.song import Song
 from src.media_scanner import scan_queue, prefetch_audio_urls
 
-song_queue = queue.Queue()
-queue_condition = threading.Condition()
+song_queue = queue.Queue() # Use a python Queue instead of a list
+queue_condition = threading.Condition() 
+
+# Set logging config and use logging.info, logging.error, etc instead of print statements
 logging.basicConfig(
     level=logging.INFO,
     format='%(levelname)s: %(message)s'
 )
 
 def search_song(search_prompt: str, retries: int = 3, delay: float = 1.0) -> tuple[str, str, int, str]:
-    """Takes in a search prompt and finds a respective video on youtube and returns the title, link, duration and author"""
+    """
+    Finds a respective video on youtube and returns the title, link, duration and author.
+    Use the retries and delays if your internet connection is poor, defaults should be okay though.
+    
+    Args:
+        search_prompt (str): The search query.
+        retries (int): Number of retry attempts on failure.
+        delay (float): Delay between retries in seconds.
+
+    Returns:
+        tuple: (song_link, song_name, song_duration, song_author)
+    """
     if not search_prompt:
         raise ValueError("Search prompt cannot be empty")
     attempt = 0
@@ -45,22 +58,28 @@ def search_song(search_prompt: str, retries: int = 3, delay: float = 1.0) -> tup
     song_duration = first_video.length
     song_author = first_video.author
     #song_released = first_video.publish_date
-    
     return song_link, song_name, song_duration, song_author
 
 def add_song_to_queue(song: Song):
-    """Adds a song to the queue"""
+    """
+    Adds a song to the queue.
+    
+    Args:
+        song (Song): The song to add to queue.
+    """
     logging.info(f"[{datetime.now()}] Adding song to queue {song.name} by {song.author} (Duration: {timedelta(seconds=song.duration)})")
-
+    # Moved the queue logger function to the api_server file to also log the search prompt as well
+    
     with queue_condition:
-        song_queue.put(song)
-        queue_condition.notify()
+        song_queue.put(song) # Use put instead of append for Queue objects
+        queue_condition.notify() # Notify the media_scanner that theres a new song in the queue
 
 def is_vlc_installed() -> bool:
     """Checks if VLC is installed and available in PATH."""
     return shutil.which("vlc") is not None
 
 def start_scanner():
+    """Starts the Media Scanner which scans the queue and plays the added songs."""
     scan_queue(song_queue, queue_condition)
 
 threading.Thread(target=prefetch_audio_urls, args=(song_queue, queue_condition), daemon=True).start()

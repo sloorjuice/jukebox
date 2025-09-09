@@ -51,7 +51,7 @@ Use the recommended script
 chmod +x scripts/install.sh
 
 # Start the API server using the script
-./scripts/installs.sh
+./scripts/install.sh
 ```
 
 1. **VLC Installation** (if not already installed)
