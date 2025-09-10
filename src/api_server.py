@@ -6,8 +6,18 @@ from src.main import search_song, add_song_to_queue, song_queue
 from src.song import Song
 from src.media_scanner import pause_playback, skip_playback
 from src.utils.logger import write_queued_song
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Allow frontend (localhost:3000) to access the API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # or ["*"] for all origins (not recommended for production)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_current_song_path():
     return os.path.join(os.path.dirname(__file__), "logs", "currently_playing.json")
