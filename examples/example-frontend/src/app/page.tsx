@@ -26,6 +26,7 @@ export default function Home() {
     try {
       const data = await sendPrompt(searchPrompt);
       setResponse(data);
+      setSearchPrompt("")
     } catch (err) {
       if (err instanceof Error) {
         setError("Error contacting API: " + err.message);
@@ -129,7 +130,7 @@ export default function Home() {
         type="text"
         value={searchPrompt}
         onChange={handleChange}
-        placeholder="Enter text"
+        placeholder="Enter Song Name..."
         className="border rounded px-4 py-2 mb-4 w-full max-w-md"
       />
 

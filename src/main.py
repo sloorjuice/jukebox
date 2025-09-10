@@ -14,6 +14,12 @@ logging.basicConfig(
     format='%(levelname)s: %(message)s'
 )
 
+# TODO - current song should be cleared when the program starts, in case the program ended before the currently playing song did.
+# TODO - Add a way to request a song with a Youtube URL
+# TODO - Add a recently played songs that displays up to the 10 last recently played songs
+# TODO - On the frontend add a check next to the song in the queue if its ready to be played
+
+
 def search_song(search_prompt: str, retries: int = 3, delay: float = 1.0) -> tuple[str, str, int, str]:
     """
     Finds a respective video on youtube and returns the title, link, duration and author.
