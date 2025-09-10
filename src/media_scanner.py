@@ -3,9 +3,9 @@ import yt_dlp, subprocess, sys, time, logging, concurrent.futures
 
 from src.song import Song
 
-vlc_process = None
-audio_url_cache = {}
-CACHE_SIZE = 5
+vlc_process = None # Variable to represent the actual current vlc process, Essential for doing things like sending commands
+audio_url_cache = {} # Cache for Extracted Audio Urls from the videos
+CACHE_SIZE = 5 
 
 # Use yt-dlp to extract the direct audio URL
 ydl_opts = {
@@ -20,16 +20,24 @@ logging.basicConfig(
 )
 
 def send_vlc_command(command: str):
+    """
+    Send a command to the current VLC Process.
+    See VLC Documentation for possible commands:
+    """
     global vlc_process
     if vlc_process and vlc_process.stdin:
         vlc_process.stdin.write((command + '\n').encode())
         vlc_process.stdin.flush()
 
 def pause_playback():
+    """
+    Sends a pause command to the current VLC Process.
+    Pause toggles Pause and Resume, No need for a resume command.
+    """
     send_vlc_command('pause')
 
 def skip_playback():
-    """Skips the current VLC playback."""
+    """Skips the current VLC playback to the next song in the queue."""
     global vlc_process
     if vlc_process and vlc_process.poll() is None:
         send_vlc_command('stop')
