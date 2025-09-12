@@ -41,16 +41,16 @@ local_hostname_lan = f"{hostname}.lan"
 
 allowed_origins = [
     "http://localhost:3000",
+    "http://localhost:3000/",
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:3000/",
     f"http://{local_ip}:3000",
+    f"http://{local_ip}:3000/",
+    f"http://{local_hostname_local}:3000",
+    f"http://{local_hostname_local}:3000/",
+    f"http://{local_hostname_lan}:3000",
+    f"http://{local_hostname_lan}:3000/",
 ]
-
-for h in [local_hostname_local, local_hostname_lan]:
-    try:
-        socket.gethostbyname(h)
-        allowed_origins.append(f"http://{h}:3000")
-    except Exception:
-        pass
 
 app = FastAPI()
 
@@ -62,6 +62,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+print("CORS allowed_origins:", allowed_origins)
 
 def get_current_song_path():
     return os.path.join(os.path.dirname(__file__), "logs", "currently_playing.json")
