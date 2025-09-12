@@ -1,4 +1,4 @@
-# ...existing code...
+#!/bin/bash
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # macOS
   IP=$(ipconfig getifaddr en0 2>/dev/null)
@@ -46,4 +46,3 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 wait
-# ...existing code...
