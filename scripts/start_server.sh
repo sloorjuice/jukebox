@@ -5,9 +5,19 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   if [ -z "$IP" ]; then
     IP=$(ipconfig getifaddr en1 2>/dev/null)
   fi
+  HOSTNAME=$(scutil --get LocalHostName 2>/dev/null)
+  if [ -n "$HOSTNAME" ]; then
+    LOCAL_DOMAIN="${HOSTNAME}.local"
+  fi
 else
   # Linux
   IP=$(hostname -I | awk '{print $1}')
+  HOSTNAME=$(hostname)
+  if [[ "$HOSTNAME" == *.local ]]; then
+    LOCAL_DOMAIN="$HOSTNAME"
+  else
+    LOCAL_DOMAIN="${HOSTNAME}.local"
+  fi
 fi
 
 echo "------------------------------------------------------"
@@ -16,17 +26,26 @@ echo "  http://localhost:3000"
 if [ -n "$IP" ]; then
   echo "  http://$IP:3000"
 fi
+if [ -n "$LOCAL_DOMAIN" ]; then
+  echo "  http://$LOCAL_DOMAIN:3000"
+fi
 echo
 echo "API server will be available at:"
 echo "  http://localhost:8000"
 if [ -n "$IP" ]; then
   echo "  http://$IP:8000"
 fi
+if [ -n "$LOCAL_DOMAIN" ]; then
+  echo "  http://$LOCAL_DOMAIN:8000"
+fi
 echo
 echo "API interactive documentation will be available at:"
 echo "  http://localhost:8000/docs"
 if [ -n "$IP" ]; then
   echo "  http://$IP:8000/docs"
+fi
+if [ -n "$LOCAL_DOMAIN" ]; then
+  echo "  http://$LOCAL_DOMAIN:8000/docs"
 fi
 echo "------------------------------------------------------"
 

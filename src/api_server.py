@@ -3,12 +3,6 @@ from pydantic import BaseModel
 import json, os
 import socket
 
-from src.main import search_song, add_song_to_queue, song_queue
-from src.song import Song
-from src.media_scanner import pause_playback, skip_playback
-from src.utils.logger import write_queued_song
-from fastapi.middleware.cors import CORSMiddleware
-
 def get_local_ip():
     """Get the local IP address of the current machine."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -22,13 +16,32 @@ def get_local_ip():
         s.close()
     return IP
 
+def get_local_hostname():
+    """Get the local hostname, and return .local version if available."""
+    hostname = socket.gethostname()
+    fqdn = socket.getfqdn()
+    # If the FQDN ends with .local, use it
+    if fqdn.endswith(".local"):
+        return fqdn
+    # Otherwise, try hostname.local
+    return f"{hostname}.local"
+
 local_ip = get_local_ip()
+local_hostname = get_local_hostname()
 frontend_ports = [3000]  # Add more ports if needed
 
 allowed_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-] + [f"http://{local_ip}:{port}" for port in frontend_ports]
+    f"http://{local_ip}:3000",
+]
+
+# Add .local hostname if it resolves
+try:
+    socket.gethostbyname(local_hostname)
+    allowed_origins.append(f"http://{local_hostname}:3000")
+except Exception:
+    pass
 
 app = FastAPI()
 
