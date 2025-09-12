@@ -34,8 +34,10 @@ def get_local_hostname():
     return f"{hostname}.local"
 
 local_ip = get_local_ip()
-local_hostname = get_local_hostname()
-frontend_ports = [3000]  # Add more ports if needed
+hostname = socket.gethostname()
+fqdn = socket.getfqdn()
+local_hostname_local = f"{hostname}.local"
+local_hostname_lan = f"{hostname}.lan"
 
 allowed_origins = [
     "http://localhost:3000",
@@ -43,12 +45,12 @@ allowed_origins = [
     f"http://{local_ip}:3000",
 ]
 
-# Add .local hostname if it resolves
-try:
-    socket.gethostbyname(local_hostname)
-    allowed_origins.append(f"http://{local_hostname}:3000")
-except Exception:
-    pass
+for h in [local_hostname_local, local_hostname_lan]:
+    try:
+        socket.gethostbyname(h)
+        allowed_origins.append(f"http://{h}:3000")
+    except Exception:
+        pass
 
 app = FastAPI()
 
