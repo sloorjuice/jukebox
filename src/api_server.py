@@ -3,6 +3,13 @@ from pydantic import BaseModel
 import json, os
 import socket
 
+from src.main import search_song, add_song_to_queue, song_queue
+from src.song import Song
+from src.media_scanner import pause_playback, skip_playback
+from src.utils.logger import write_queued_song
+from fastapi.middleware.cors import CORSMiddleware
+
+
 def get_local_ip():
     """Get the local IP address of the current machine."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
