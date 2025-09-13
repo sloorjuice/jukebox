@@ -49,6 +49,8 @@ if [ -n "$LOCAL_DOMAIN" ]; then
 fi
 echo "------------------------------------------------------"
 
+source venv/bin/activate
+
 # start backend in background
 uvicorn src.api_server:app --reload --host 0.0.0.0 --port 8000 &
 UVICORN_PID=$!
