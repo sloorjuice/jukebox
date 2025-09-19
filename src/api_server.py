@@ -6,7 +6,7 @@ import socket
 from src.main import search_song, add_song_to_queue, song_queue
 from src.song import Song
 from src.media_scanner import pause_playback, skip_playback
-from src.utils.logger import write_queued_song
+from src.utils.logger import write_queued_song, write_current_restriction_mode
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -70,11 +70,18 @@ def get_current_song_path():
 
 class SongRequest(BaseModel):
     prompt: str
+    
+class ToggleCleanModeRequest(BaseModel):
+    prompt: bool
 
 class SongResponse(BaseModel):
     status: str
     song: str
     author: str
+
+class ToggleRestrictionResponse(BaseModel):
+    status: str
+    clean_mode: bool
 
 class QueueSong(BaseModel):
     name: str
@@ -88,6 +95,10 @@ def request_song(song_request: SongRequest):
     write_queued_song(song, song_request.prompt)
     add_song_to_queue(song)
     return {"status": "added", "song": name, "author": author}
+
+@app.post("/toggle_clean_mode", response_model=ToggleRestrictionResponse)
+def toggle_clean_mode(toggle_Clean_Mode_Request: ToggleCleanModeRequest):
+    write_current_restriction_mode(ToggleCleanModeRequest)
 
 @app.get("/queue", response_model=list[QueueSong])
 def get_queue():

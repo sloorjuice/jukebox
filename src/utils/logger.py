@@ -6,6 +6,7 @@ import os, json, datetime
 # TODO - Add logging to paused songs, Log the song that was paused or unpaused
 
 CURRENT_SONG = os.path.join(os.path.dirname(__file__), "..", "logs", "currently_playing.json")
+CURRENT_RESTRICTION_MODE = os.path.join(os.path.dirname(__file__), "..", "logs", "current_restriction_mode.json")
 ALL_QUEUED_SONGS = os.path.join(os.path.dirname(__file__), "..", "logs", "all_queued_songs.json")
 ALL_PLAYED_SONGS = os.path.join(os.path.dirname(__file__), "..", "logs", "all_played_songs.json")
 
@@ -20,6 +21,19 @@ def write_current_song(song):
             "duration": song.duration,
             "url": song.url,
             "played_at": datetime.datetime.now().isoformat()
+        }
+    with open(CURRENT_SONG, "w") as f:
+        json.dump(data, f, indent=2)
+        
+def write_current_restriction_mode(clean: bool = False):
+    os.makedirs(os.path.dirname(CURRENT_SONG), exist_ok=True)
+    if clean is True:
+        data = {
+            "clean mode": True
+        }
+    if clean is False:
+        data = {
+            "clean mode": False
         }
     with open(CURRENT_SONG, "w") as f:
         json.dump(data, f, indent=2)

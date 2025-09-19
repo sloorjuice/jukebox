@@ -8,11 +8,15 @@ from src.media_scanner import scan_queue, prefetch_audio_urls
 song_queue = queue.Queue() # Use a python Queue instead of a list
 queue_condition = threading.Condition() 
 
+clean_mode = False
+
 # Set logging config and use logging.info, logging.error, etc instead of print statements
 logging.basicConfig(
     level=logging.INFO,
     format='%(levelname)s: %(message)s'
 )
+
+# dont skip if no songs in cache
 
 # TODO - current song should be cleared when the program starts, in case the program ended before the currently playing song did.
 # TODO - Add a way to request a song with a Youtube URL
@@ -20,7 +24,7 @@ logging.basicConfig(
 # TODO - On the frontend add a check next to the song in the queue if its ready to be played
 
 
-def search_song(search_prompt: str, retries: int = 3, delay: float = 1.0) -> tuple[str, str, int, str]:
+def search_song(search_prompt: str, restricted: bool = False, retries: int = 3, delay: float = 1.0) -> tuple[str, str, int, str]:
     """
     Finds a respective video on youtube and returns the title, link, duration and author.
     Use the retries and delays if your internet connection is poor, defaults should be okay though.
@@ -35,6 +39,9 @@ def search_song(search_prompt: str, retries: int = 3, delay: float = 1.0) -> tup
     """
     if not search_prompt:
         raise ValueError("Search prompt cannot be empty")
+    
+    if restricted:
+        search_prompt = f'{search_prompt} clean'
     attempt = 0
     while attempt < retries:
         try:
@@ -123,7 +130,7 @@ else:
 if __name__ == "__main__":
     while True:
         song_search_prompt = input("\nSearch for a song > ")
-        song_url, song_name, song_duration, song_author = search_song(song_search_prompt)
+        song_url, song_name, song_duration, song_author = search_song(song_search_prompt, clean_mode)
         song = Song(song_name, song_url, song_duration, song_author)
         add_song_to_queue(song)
         time.sleep(1)  # Wait until the song starts playing
