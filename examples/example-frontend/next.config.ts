@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+/**import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
     'http://jukebox.local:3000',
     'http://jukebox.local:3000/'
   ],
+};
+
+export default nextConfig;**/
+
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  allowedDevOriginPattern: /^http:\/\/(localhost|127\.0\.0\.1|jukebox\.local)(:\d+)?\/?$/, //Allows any port
 };
 
 export default nextConfig;
