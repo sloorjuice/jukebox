@@ -1,6 +1,7 @@
 from pytubefix import Search
 from datetime import datetime, timedelta
 import time, threading, shutil, sys, subprocess, platform, queue, logging
+import json, os
 
 from src.utils.logger import write_current_song
 from src.song import Song
@@ -137,10 +138,20 @@ scanner_thread.start()
 
 write_current_song(None)
 
+def get_clean_mode():
+    path = os.path.join(os.path.dirname(__file__), "logs", "current_restriction_mode.json")
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+            return data.get("clean mode", False)
+    except Exception:
+        return False
+
 if __name__ == "__main__":
     while True:
         song_search_prompt = input("\nSearch for a song > ")
-        song_url, song_name, song_duration, song_author = search_song(song_search_prompt, clean_mode)
+        clean_mode = get_clean_mode()
+        song_url, song_name, song_duration, song_author = search_song(song_search_prompt, restricted=clean_mode)
         song = Song(song_name, song_url, song_duration, song_author)
         add_song_to_queue(song)
         time.sleep(1)  # Wait until the song starts playing
