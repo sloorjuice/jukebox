@@ -97,8 +97,9 @@ def request_song(song_request: SongRequest):
     return {"status": "added", "song": name, "author": author}
 
 @app.post("/toggle_clean_mode", response_model=ToggleRestrictionResponse)
-def toggle_clean_mode(toggle_Clean_Mode_Request: ToggleCleanModeRequest):
-    write_current_restriction_mode(ToggleCleanModeRequest)
+def toggle_clean_mode(toggle_clean_mode_request: ToggleCleanModeRequest):
+    write_current_restriction_mode(toggle_clean_mode_request.prompt)
+    return {"status": "Toggled", "clean_mode": toggle_clean_mode_request.prompt}
 
 @app.get("/queue", response_model=list[QueueSong])
 def get_queue():

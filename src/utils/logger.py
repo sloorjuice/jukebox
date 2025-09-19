@@ -26,16 +26,9 @@ def write_current_song(song):
         json.dump(data, f, indent=2)
         
 def write_current_restriction_mode(clean: bool = False):
-    os.makedirs(os.path.dirname(CURRENT_SONG), exist_ok=True)
-    if clean is True:
-        data = {
-            "clean mode": True
-        }
-    if clean is False:
-        data = {
-            "clean mode": False
-        }
-    with open(CURRENT_SONG, "w") as f:
+    os.makedirs(os.path.dirname(CURRENT_RESTRICTION_MODE), exist_ok=True)
+    data = {"clean mode": bool(clean)}
+    with open(CURRENT_RESTRICTION_MODE, "w") as f:
         json.dump(data, f, indent=2)
         
 def write_played_song(song):
