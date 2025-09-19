@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import json, os
 import socket
 
-from src.main import search_song, add_song_to_queue, song_queue
+from src.main import search_song, add_song_to_queue, song_queue, set_clean_mode, clean_mode
 from src.song import Song
 from src.media_scanner import pause_playback, skip_playback
 from src.utils.logger import write_queued_song, write_current_restriction_mode
@@ -90,7 +90,7 @@ class QueueSong(BaseModel):
 
 @app.post("/request_song", response_model=SongResponse)
 def request_song(song_request: SongRequest):
-    url, name, duration, author = search_song(song_request.prompt)
+    url, name, duration, author = search_song(song_request.prompt, restricted=clean_mode)
     song = Song(name, url, duration, author)
     write_queued_song(song, song_request.prompt)
     add_song_to_queue(song)
@@ -99,6 +99,7 @@ def request_song(song_request: SongRequest):
 @app.post("/toggle_clean_mode", response_model=ToggleRestrictionResponse)
 def toggle_clean_mode(toggle_clean_mode_request: ToggleCleanModeRequest):
     write_current_restriction_mode(toggle_clean_mode_request.prompt)
+    set_clean_mode(toggle_clean_mode_request.prompt)
     return {"status": "Toggled", "clean_mode": toggle_clean_mode_request.prompt}
 
 @app.get("/queue", response_model=list[QueueSong])

@@ -11,6 +11,10 @@ queue_condition = threading.Condition()
 
 clean_mode = False
 
+def set_clean_mode(value: bool):
+    global clean_mode
+    clean_mode = value
+
 # Set logging config and use logging.info, logging.error, etc instead of print statements
 logging.basicConfig(
     level=logging.INFO,
