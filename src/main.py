@@ -2,6 +2,7 @@ from pytubefix import Search
 from datetime import datetime, timedelta
 import time, threading, shutil, sys, subprocess, platform, queue, logging
 
+from src.utils.logger import write_current_song
 from src.song import Song
 from src.media_scanner import scan_queue, prefetch_audio_urls
 
@@ -99,33 +100,38 @@ threading.Thread(target=prefetch_audio_urls, args=(song_queue, queue_condition),
 scanner_thread = threading.Thread(target=start_scanner, daemon=True)
 scanner_thread.start()
 
-if not is_vlc_installed():
-    if sys.platform == "darwin":
-        cmd = ['brew', 'install', '--cask', 'vlc']
-    elif sys.platform.startswith("linux"):
-        distro = platform.freedesktop_os_release().get("ID", "") if hasattr(platform, "freedesktop_os_release") else ""
-        if distro in ["ubuntu", "debian"]:
-            cmd = ['sudo', 'apt', 'install', 'vlc']
-        elif distro in ["fedora"]:
-            cmd = ['sudo', 'dnf', 'install', 'vlc']
-        elif distro in ["centos", "rhel"]:
-            cmd = ['sudo', 'yum', 'install', 'vlc']
-        elif distro in ["arch", "manjaro"]:
-            cmd = ['sudo', 'pacman', '-S', 'vlc']
-        else:
-            # Fallback: try yay if available, else apt
-            if shutil.which("yay"):
-                cmd = ['yay', '-S', 'vlc']
-            else:
-                cmd = ['sudo', 'apt', 'install', 'vlc']
-    else:
-        logging.error("Unsupported OS. Please install VLC manually.")
-        sys.exit(1)
-    c = input("VLC is not installed and is essential for this program, would you like to install it? (y/n)")
-    if c == "y":
-        subprocess.run(cmd, check=True)
-else:
-    logging.info("Vlc Installed Already.")
+
+
+# THIS IS REALLY STUPID - move it to the install script
+# if not is_vlc_installed():
+#     if sys.platform == "darwin":
+#         cmd = ['brew', 'install', '--cask', 'vlc']
+#     elif sys.platform.startswith("linux"):
+#         distro = platform.freedesktop_os_release().get("ID", "") if hasattr(platform, "freedesktop_os_release") else ""
+#         if distro in ["ubuntu", "debian"]:
+#             cmd = ['sudo', 'apt', 'install', 'vlc']
+#         elif distro in ["fedora"]:
+#             cmd = ['sudo', 'dnf', 'install', 'vlc']
+#         elif distro in ["centos", "rhel"]:
+#             cmd = ['sudo', 'yum', 'install', 'vlc']
+#         elif distro in ["arch", "manjaro"]:
+#             cmd = ['sudo', 'pacman', '-S', 'vlc']
+#         else:
+#             # Fallback: try yay if available, else apt
+#             if shutil.which("yay"):
+#                 cmd = ['yay', '-S', 'vlc']
+#             else:
+#                 cmd = ['sudo', 'apt', 'install', 'vlc']
+#     else:
+#         logging.error("Unsupported OS. Please install VLC manually.")
+#         sys.exit(1)
+#     c = input("VLC is not installed and is essential for this program, would you like to install it? (y/n)")
+#     if c == "y":
+#         subprocess.run(cmd, check=True)
+# else:
+#     logging.info("Vlc Installed Already.")
+
+write_current_song(None)
 
 if __name__ == "__main__":
     while True:
