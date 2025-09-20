@@ -20,9 +20,9 @@ A Python-powered CLI and API for music streaming that allows you to search for Y
 This guide covers:
 - **Complete server setup** from a fresh Armbian installation
 - **Dependency installation** and troubleshooting
-- **Automatic startup** using systemd services
-- **Custom Hostname** with avahi and nginx for easy local network control
-- **Remote access** setup with port forwarding (Optional)
+- **Automatic startup** using systemd services (COMING SOON)
+- **Custom Hostname** with avahi and nginx for easy local network control (COMING SOON)
+- **Remote access** setup with port forwarding (Optional) (COMING SOON)
 
 ## Prerequisites
 
@@ -48,11 +48,20 @@ cd jukebox
 # Make the script executable
 chmod +x scripts/install.sh
 
-# Start the API server using the script
+# Just Simply run the script
 ./scripts/install.sh
 ```
 
-3. **VLC Installation** (if not already installed)
+3. **Install Frontend dependencies**
+```bash
+# Open the frontend directory
+cd examples/example-frontend
+
+# Downlaod the dependencies
+npm install
+```
+
+4. **VLC Installation** (if not already installed)
 - **macOS**: Uses Homebrew (`brew install --cask vlc`)
 - **Linux**: Uses system package manager (apt, dnf, yum, pacman)
 
