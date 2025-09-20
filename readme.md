@@ -11,60 +11,31 @@ A Python-powered CLI and API for music streaming that allows you to search for Y
 - 📊 **Logging System**: Tracks played and queued songs with timestamps
 - 🚀 **Audio Prefetching**: Intelligent caching for smoother playback
 - 🎧 **VLC Integration**: Uses VLC media player for reliable audio playback straight in the terminal, no VLC window or anything
+- 🖥️ **Frontend Template**: Easily set up and host a website with your server to control the API
 
 ### Coming Soon
 
-- 🖥️ **Frontend Template**: Easily set up and host a website with your server to control the API
-- 📄 **Setup Guide**: A setup guide to help anyone spin up this project to use in their home, experienced or not
-
 ## Setup Guide
-
-For detailed setup instructions, especially for headless servers like Le Potato with Armbian, see our comprehensive [Setup Server Guide](docs/Setup_server.md).
 
 This guide covers:
 - **Complete server setup** from a fresh Armbian installation
-- **Audio configuration** (crucial for Le Potato and similar SBCs)
 - **Dependency installation** and troubleshooting
-- **Automatic startup** configuration using systemd
-- **Remote access** setup with port forwarding
-- **Frontend hosting** and nginx reverse proxy
-- **True headless operation** (plug-and-play without login)
+- **Automatic startup** using systemd services
+- **Custom Hostname** with avahi and nginx for easy local network control
+- **Remote access** setup with port forwarding (Optional)
 
 ## Prerequisites
 
 - **Python 3.7+**
-- **VLC Media Player** (automatically installed if missing)
+- **node.js 22+**
+- **VLC Media Player**
+- **git**
 
 ### Supported Operating Systems
 - macOS
 - Linux
 
 ## Installation
-
-### Quick Start (Recommended)
-For most users, especially on fresh systems:
-
-```bash
-git clone https://github.com/sloorjuice/jukebox/
-cd jukebox
-chmod +x scripts/install_server.sh
-./scripts/install_server.sh
-```
-
-This script automatically installs all system dependencies and sets up the virtual environment.
-
-### Headless Server Setup
-For dedicated music servers (like Le Potato) that run without user login:
-
-```bash
-# After installation, run the headless setup
-sudo ./scripts/setup_headless.sh
-```
-
-This configures systemd services for automatic startup on boot.
-
-### Manual Installation
-If you prefer manual setup or have a customized environment:
 
 1. **Clone the repository**
 ```bash
@@ -81,14 +52,7 @@ chmod +x scripts/install.sh
 ./scripts/install.sh
 ```
 
-### System Dependencies
-The application requires:
-- **Python 3.7+**
-- **VLC Media Player** (automatically installed if missing)
-- **Node.js and npm** (for the example frontend)
-
 3. **VLC Installation** (if not already installed)
-The application will automatically detect if VLC is missing and offer to install it:
 - **macOS**: Uses Homebrew (`brew install --cask vlc`)
 - **Linux**: Uses system package manager (apt, dnf, yum, pacman)
 
