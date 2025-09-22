@@ -95,6 +95,14 @@ def ensure_vlc_running() -> bool:
         '--sout-keep'
     ]
 
+    # Linux: force PulseAudio backend and increase PulseAudio latency to reduce pops
+    # (keeps device open longer / reduces underruns when switching streams).
+    env = None
+    if sys.platform.startswith('linux'):
+        cmd.extend(['--aout', 'pulse'])
+        env = os.environ.copy()
+        env.setdefault('PULSE_LATENCY_MSEC', '60')
+
     try:
         logging.info(f"Starting VLC process using: {vlc_cmd}")
         logs_dir = os.path.join(os.path.dirname(__file__), "logs")
@@ -106,7 +114,8 @@ def ensure_vlc_running() -> bool:
             cmd,
             stdin=subprocess.PIPE,
             stdout=logfile_handle,
-            stderr=logfile_handle
+            stderr=logfile_handle,
+            env=env
         )
         # Give VLC a moment to initialize
         time.sleep(1.5)
