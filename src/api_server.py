@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import json, os
 import socket
 
-from src.main import search_song, add_song_to_queue, song_queue, set_clean_mode, clean_mode, get_clean_mode
+from src.main import search_song, add_song_to_queue, song_queue, set_clean_mode, get_clean_mode
 from src.song import Song
 from src.media_scanner import pause_playback, skip_playback
 from src.utils.logger import write_queued_song, write_current_restriction_mode
@@ -93,6 +93,8 @@ class QueueSong(BaseModel):
 def request_song(song_request: SongRequest):
     clean_mode = get_clean_mode()
     url, name, duration, author = search_song(song_request.prompt, restricted=clean_mode)
+    if not url:
+        raise HTTPException(status_code=404, detail="Song not found")
     song = Song(name, url, duration, author)
     write_queued_song(song, song_request.prompt)
     add_song_to_queue(song)
@@ -128,6 +130,3 @@ def pause_toggle():
 def skip():
     skip_playback()
     return {"status": "skipped current song"}
-
-
-
