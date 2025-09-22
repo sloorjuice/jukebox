@@ -79,20 +79,23 @@ def search_song(search_prompt: str, restricted: bool = False, retries: int = 3, 
     #song_released = first_video.publish_date
     return song_link, song_name, song_duration, song_author
 
-def add_song_to_queue(song: Song):
+def add_song_to_queue(song: Song, search_prompt: str = ""):
     """
     Adds a song to the queue.
     
     Args:
         song (Song): The song to add to queue.
+        search_prompt (str): Optional search prompt to log with the queued song.
     """
     logging.info(f"[{datetime.now()}] Adding song to queue {song.name} by {song.author} (Duration: {timedelta(seconds=song.duration)})")
-    # Moved the queue logger function to the api_server file to also log the search prompt as well
+    from src.utils.logger import write_queued_song  # Import here to avoid circular imports
+    # Log the queued song (do not touch currently_playing.json here)
+    write_queued_song(song, search_prompt, active=False)
     
     with queue_condition:
-        song_queue.put(song) # Use put instead of append for Queue objects
-        queue_condition.notify() # Notify the media_scanner that theres a new song in the queue
-
+        song_queue.put(song)  # Use put instead of append for Queue objects
+        queue_condition.notify()  # Notify the media_scanner that there's a new song in the queue
+        
 def is_vlc_installed() -> bool:
     """Checks if VLC is installed and available in PATH."""
     return shutil.which("vlc") is not None

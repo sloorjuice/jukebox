@@ -5,6 +5,7 @@ class Song:
         self.url = url
         self.duration = duration
         self.author = author
+        self.active = False
 
     def __eq__(self, other):
         return isinstance(other, Song) and self.url == other.url

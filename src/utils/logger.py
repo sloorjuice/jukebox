@@ -10,7 +10,7 @@ CURRENT_RESTRICTION_MODE = os.path.join(os.path.dirname(__file__), "..", "logs",
 ALL_QUEUED_SONGS = os.path.join(os.path.dirname(__file__), "..", "logs", "all_queued_songs.json")
 ALL_PLAYED_SONGS = os.path.join(os.path.dirname(__file__), "..", "logs", "all_played_songs.json")
 
-def write_current_song(song):
+def write_current_song(song, active: bool = False):
     os.makedirs(os.path.dirname(CURRENT_SONG), exist_ok=True)
     if song is None:
         data = None
@@ -20,7 +20,8 @@ def write_current_song(song):
             "author": song.author,
             "duration": song.duration,
             "url": song.url,
-            "played_at": datetime.datetime.now().isoformat()
+            "played_at": datetime.datetime.now().isoformat(),
+            "active": active  # Add active status
         }
     with open(CURRENT_SONG, "w") as f:
         json.dump(data, f, indent=2)
@@ -55,7 +56,7 @@ def write_played_song(song):
     with open(ALL_PLAYED_SONGS, "w") as f:
         json.dump(songs, f, indent=2)
 
-def write_queued_song(song, search_prompt):
+def write_queued_song(song, search_prompt, active: bool = False):
     os.makedirs(os.path.dirname(ALL_QUEUED_SONGS), exist_ok=True)
     if song is None:
         return
@@ -65,9 +66,10 @@ def write_queued_song(song, search_prompt):
         "duration": song.duration,
         "url": song.url,
         "search_prompt": search_prompt,
-        "timestamp": datetime.datetime.now().isoformat()
+        "timestamp": datetime.datetime.now().isoformat(),
+        "active": active  # Add active status to queue log
     }
-    # We have to read all the data in the file and and add it before the new song to prevent overwriting
+    # We have to read all the data in the file and add it before the new song to prevent overwriting
     if os.path.exists(ALL_QUEUED_SONGS):
         with open(ALL_QUEUED_SONGS, "r") as f:
             try:
