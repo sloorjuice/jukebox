@@ -279,21 +279,29 @@ def scan_queue(queue, queue_condition):
     logging.info("Starting queue scanner thread")
     while True:
         try:
-            # Check if VLC is playing or if the queue is empty. Wait if either is true.
+            # Check if VLC is playing or if the queue is empty.
             is_playing = _is_vlc_playing()
-            if is_playing or queue.empty():
+            if is_playing:
+                # If a song is playing, simply wait.
                 time.sleep(1)
-                if not is_playing:
-                    write_current_song(None, active=False)
+                continue
+            
+            # If VLC is not playing, check if there's a song in the queue to play.
+            if queue.empty():
+                write_current_song(None, active=False)
+                time.sleep(1)
                 continue
 
             # If we reach this point, VLC is not playing and the queue is not empty.
             with queue_condition:
                 song_to_play = queue.get()
-                write_played_song(song_to_play)
             
-            logging.info(f"Preparing to play: {song_to_play.name}")
+            # Update logs BEFORE playing
+            write_played_song(song_to_play)
+            write_current_song(song_to_play, active=True)
             current_playing_song = song_to_play
+
+            logging.info(f"Preparing to play: {song_to_play.name}")
 
             if not ensure_vlc_running():
                 logging.error("Failed to ensure VLC is running, retrying in 5 seconds")
@@ -309,16 +317,18 @@ def scan_queue(queue, queue_condition):
 
             if not stream_url:
                 logging.error(f"Failed to get URL for {song_to_play.name}, skipping")
+                # Update the currently playing file to show nothing is playing
+                write_current_song(None, active=False)
                 continue
 
             logging.info(f"Adding and playing {song_to_play.name}")
             if send_vlc_command(f'add {stream_url}'):
                 set_vlc_volume(MAX_VLC_VOLUME)
-                write_current_song(song_to_play, active=True)
                 logging.info(f"Now playing: {song_to_play.name}")
-
             else:
                 logging.error(f"Failed to add song to VLC: {song_to_play.name}")
+                # Update the currently playing file to show nothing is playing
+                write_current_song(None, active=False)
 
         except Exception as e:
             logging.error(f"Error in queue scanner: {e}")
