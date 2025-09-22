@@ -1,7 +1,7 @@
-from utils.logger import write_current_song, write_played_song
+from src.utils.logger import write_current_song, write_played_song
 import yt_dlp, subprocess, sys, time, logging, concurrent.futures
 
-from song import Song
+from src.song import Song
 
 vlc_process = None  # Variable to represent the actual current vlc process, Essential for doing things like sending commands
 audio_url_cache = {}  # Cache for Extracted Audio Urls from the videos
