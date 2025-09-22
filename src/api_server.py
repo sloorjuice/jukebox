@@ -4,7 +4,7 @@ import json, os
 import socket
 
 from src.main import add_song_to_queue, set_clean_mode, get_clean_mode, song_queue
-from src.media_scanner import pause_playback, skip_playback
+from src.media_scanner import pause_playback, skip_playback, get_current_playing_song
 from src.utils.logger import write_queued_song, write_current_restriction_mode
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
@@ -70,9 +70,8 @@ class QueueSong(BaseModel):
     name: str
     author: str
     duration: int
-    active: bool # To indicate if the song is waiting to be played or already playing
-    search_prompt: str
     url: str
+    search_prompt: Optional[str] = None
 
 class CurrentlyPlayingResponse(BaseModel):
     name: Optional[str]
@@ -84,8 +83,7 @@ class CurrentlyPlayingResponse(BaseModel):
 
 @app.post("/request_song", response_model=SongResponse)
 def request_song(song_request: SongRequest):
-    # This part of the code is fine, no changes needed
-    from src.main import search_song, Song # Importing here to avoid circular dependencies
+    from src.main import search_song, Song
     clean_mode = get_clean_mode()
     url, name, duration, author = search_song(song_request.prompt, restricted=clean_mode)
     if not url:
@@ -102,7 +100,7 @@ def toggle_clean_mode(toggle_clean_mode_request: ToggleCleanModeRequest):
 
 @app.get("/queue", response_model=list[QueueSong])
 def get_queue():
-    # Return the actual queue state, not the log file
+    """Return the current queue state (songs waiting to be played)."""
     songs = []
     with song_queue.mutex:
         for song in list(song_queue.queue):
@@ -110,7 +108,8 @@ def get_queue():
                 "name": song.name,
                 "author": song.author,
                 "duration": song.duration,
-                "url": song.url
+                "url": song.url,
+                "search_prompt": getattr(song, 'search_prompt', None)
             })
     return songs
 
@@ -119,12 +118,10 @@ def get_currently_playing(current_song_path: str = Depends(get_current_song_path
     try:
         with open(current_song_path, "r") as f:
             data = json.load(f)
-            # Handle the case where the file is empty or contains 'null'
             if data is None:
                 return {"name": None, "author": None, "duration": None, "url": None, "played_at": None, "active": False}
         return CurrentlyPlayingResponse(**data)
     except (FileNotFoundError, json.JSONDecodeError):
-        # File doesn't exist or is empty/invalid JSON, means nothing is playing
         return {"name": None, "author": None, "duration": None, "url": None, "played_at": None, "active": False}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

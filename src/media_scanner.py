@@ -9,6 +9,8 @@ from src.song import Song
 # Global variables
 vlc_process = None
 logfile_handle = None
+current_playing_song = None
+song_end_time = None  # Track when current song should end
 
 # Thread-safe LRU cache for extracted audio URLs
 CACHE_SIZE = 5
@@ -16,8 +18,6 @@ audio_url_cache = OrderedDict()
 cache_lock = threading.Lock()
 in_progress_extractions = set()
 in_progress_lock = threading.Lock()
-
-current_playing_song = None
 
 # Best-effort yt-dlp options for highest-quality audio extraction
 ydl_opts = {
@@ -103,7 +103,10 @@ def ensure_vlc_running() -> bool:
         '--audio-time-stretch',
         '--audio-filter=compressor:normvol',
         '--gain=2.0',
-        '--sout-keep'
+        '--sout-keep',
+        '--no-loop',           # Disable looping
+        '--no-repeat',         # Disable repeat
+        '--play-and-exit'      # Exit after playing (but we manage playlist manually)
     ]
 
     env = None
@@ -122,6 +125,9 @@ def ensure_vlc_running() -> bool:
             env=env
         )
         time.sleep(1.5)
+        # Ensure no looping/repeat is enabled
+        send_vlc_command('loop off')
+        send_vlc_command('repeat off')
         set_vlc_volume(MAX_VLC_VOLUME)
         logging.info("VLC process started successfully.")
         return True
@@ -142,9 +148,20 @@ def pause_playback():
         logging.info("Toggled pause/play")
 
 def skip_playback():
+    global current_playing_song, song_end_time
     if ensure_vlc_running():
-        send_vlc_command('next')
-        logging.info("Skip command sent")
+        send_vlc_command('stop')  # Use stop to clear current song
+        send_vlc_command('clear')  # Clear the entire playlist
+        # Clear current song state immediately
+        current_playing_song = None
+        song_end_time = None
+        write_current_song(None, active=False)
+        logging.info("Skipped current song")
+
+def get_current_playing_song():
+    """Get the currently playing song."""
+    global current_playing_song
+    return current_playing_song
 
 def _cache_put(song: Song, url: str):
     """Insert into LRU cache with eviction."""
@@ -197,6 +214,9 @@ def extract_and_cache_url(song: Song):
             logging.error(f"Failed to extract URL for: {song.name}")
     except Exception as e:
         logging.error(f"Prefetch error for {song.name}: {e}")
+    finally:
+        with in_progress_lock:
+            in_progress_extractions.discard(song)
 
 def _choose_best_format(info: dict) -> Optional[str]:
     """
@@ -253,58 +273,79 @@ def extract_audio_url(song: Song) -> Optional[str]:
             time.sleep(1 + attempt)
     return None
 
-def _is_vlc_playing():
-    """
-    Checks if VLC is currently playing a track by sending a dummy command
-    and checking for a response on stdout.
-    """
+def _is_song_finished() -> bool:
+    """Check if the current song has finished playing based on duration tracking."""
+    global song_end_time, current_playing_song
+    
+    if not current_playing_song or not song_end_time:
+        return True
+    
+    current_time = time.time()
+    return current_time >= song_end_time
+
+def _check_vlc_status() -> str:
+    """Check VLC playback status by sending 'status' command and reading response."""
     global vlc_process
+    
     if not vlc_process or vlc_process.poll() is not None:
-        return False
+        return "stopped"
+    
     try:
-        # Send a command to get some output
-        vlc_process.stdin.write(b'status\n')
-        vlc_process.stdin.flush()
-        # Read a line from the output to see if it's "playing"
-        output = vlc_process.stdout.readline().decode('utf-8')
-        return "state playing" in output.strip().lower()
-    except Exception as e:
-        logging.error(f"Error checking VLC status: {e}")
-        return False
+        # Send status command
+        if send_vlc_command('status'):
+            # Try to read some output to check status
+            # This is a best-effort approach since VLC RC interface can be inconsistent
+            return "unknown"  # We'll rely on duration tracking instead
+    except Exception:
+        pass
+    
+    return "unknown"
 
 def scan_queue(queue, queue_condition):
     """Main function that scans the queue and plays songs."""
-    global vlc_process, current_playing_song
+    global vlc_process, current_playing_song, song_end_time
 
     logging.info("Starting queue scanner thread")
     while True:
         try:
-            # Check if VLC is playing or if the queue is empty.
-            is_playing = _is_vlc_playing()
-            if is_playing:
-                # If a song is playing, simply wait.
-                time.sleep(1)
+            # Check if current song has finished
+            if current_playing_song and _is_song_finished():
+                logging.info(f"Song finished: {current_playing_song.name}")
+                # Ensure VLC playlist is cleared when song finishes
+                if ensure_vlc_running():
+                    send_vlc_command('stop')
+                    send_vlc_command('clear')
+                current_playing_song = None
+                song_end_time = None
+                write_current_song(None, active=False)
+            
+            # If a song is currently playing, wait
+            if current_playing_song and not _is_song_finished():
+                time.sleep(0.5)
                 continue
             
-            # If VLC is not playing, check if there's a song in the queue to play.
+            # If no song is playing, check if there's a song in the queue to play
             if queue.empty():
-                write_current_song(None, active=False)
+                if current_playing_song is None:
+                    write_current_song(None, active=False)
+                    # Ensure VLC is stopped and cleared when no songs are queued
+                    if ensure_vlc_running():
+                        send_vlc_command('stop')
+                        send_vlc_command('clear')
                 time.sleep(1)
                 continue
 
-            # If we reach this point, VLC is not playing and the queue is not empty.
+            # Get next song from queue
             with queue_condition:
                 song_to_play = queue.get()
             
-            # Update logs BEFORE playing
-            write_played_song(song_to_play)
-            write_current_song(song_to_play, active=True)
-            current_playing_song = song_to_play
-
             logging.info(f"Preparing to play: {song_to_play.name}")
 
             if not ensure_vlc_running():
                 logging.error("Failed to ensure VLC is running, retrying in 5 seconds")
+                # Put the song back in the queue
+                with queue_condition:
+                    queue.put(song_to_play)
                 time.sleep(5)
                 continue
 
@@ -317,17 +358,29 @@ def scan_queue(queue, queue_condition):
 
             if not stream_url:
                 logging.error(f"Failed to get URL for {song_to_play.name}, skipping")
-                # Update the currently playing file to show nothing is playing
                 write_current_song(None, active=False)
                 continue
 
-            logging.info(f"Adding and playing {song_to_play.name}")
+            # Clear any existing playlist and add only the new song
+            send_vlc_command('clear')
+            time.sleep(0.1)  # Small delay to ensure clear command is processed
+            
             if send_vlc_command(f'add {stream_url}'):
+                # Ensure the song starts playing
+                send_vlc_command('play')
+                
+                # Update state AFTER successfully adding to VLC
+                current_playing_song = song_to_play
+                song_end_time = time.time() + song_to_play.duration + 3  # Add 3 second buffer
+                
+                # Log the song as played and currently playing
+                write_played_song(song_to_play)
+                write_current_song(song_to_play, active=True)
+                
                 set_vlc_volume(MAX_VLC_VOLUME)
                 logging.info(f"Now playing: {song_to_play.name}")
             else:
                 logging.error(f"Failed to add song to VLC: {song_to_play.name}")
-                # Update the currently playing file to show nothing is playing
                 write_current_song(None, active=False)
 
         except Exception as e:
@@ -338,4 +391,6 @@ def scan_queue(queue, queue_condition):
             except Exception:
                 pass
             vlc_process = None
+            current_playing_song = None
+            song_end_time = None
             time.sleep(2)
