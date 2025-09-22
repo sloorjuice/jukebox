@@ -65,6 +65,12 @@ npm install
 - **macOS**: Uses Homebrew (`brew install --cask vlc`)
 - **Linux**: Uses system package manager (apt, dnf, yum, pacman)
 
+5. **Setting up a custom hostname** with **avahi** and **nginx**
+
+
+6. **Setting up systemd services**
+  
+   
 ## Usage
 
 ### Running the Application
