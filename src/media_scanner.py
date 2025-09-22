@@ -7,9 +7,10 @@ vlc_process = None # Variable to represent the actual current vlc process, Essen
 audio_url_cache = {} # Cache for Extracted Audio Urls from the videos
 CACHE_SIZE = 5 
 
-# Use yt-dlp to extract the direct audio URL
+# Use yt-dlp to extract the direct audio URL with highest quality settings
 ydl_opts = {
-    'format': 'bestaudio[ext=m4a]/bestaudio/best',
+    'format': 'bestaudio/best',
+    'format_sort': ['acodec:flac', 'acodec:opus', 'acodec:aac', 'abr', 'asr'],
     'quiet': True,
     'skip_download': True,
 }
@@ -99,7 +100,17 @@ def scan_queue(queue: list, queue_condition):
                 vlc_cmd,
                 '--intf', 'rc',
                 '--no-video',
-                '--play-and-exit', 
+                '--play-and-exit',
+                '--audio-filter=compressor:normvol',  # Add compression and normalization
+                '--compressor-rms-peak=0.2',          # Adjust compression settings
+                '--compressor-attack=50.0',
+                '--compressor-release=200.0',
+                '--compressor-threshold=-15.0',
+                '--compressor-ratio=5.0',
+                '--compressor-knee=2.0',
+                '--compressor-makeup-gain=7.0',
+                '--norm-max-level=90.0',              # Set maximum normalization level
+                '--sout-keep',                        # Keep stream output
                 stream_url
             ]
             vlc_process = subprocess.Popen(
