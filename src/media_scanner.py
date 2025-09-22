@@ -101,16 +101,22 @@ def scan_queue(queue: list, queue_condition):
                 '--intf', 'rc',
                 '--no-video',
                 '--play-and-exit',
-                '--audio-filter=compressor:normvol',  # Add compression and normalization
-                '--compressor-rms-peak=0.2',          # Adjust compression settings
-                '--compressor-attack=50.0',
-                '--compressor-release=200.0',
-                '--compressor-threshold=-15.0',
-                '--compressor-ratio=5.0',
+                '--audio-time-stretch',            # Enable time stretching for smoother transitions
+                '--audio-filter=compressor:normvol:fadeout:fadein',  # Add fade effects
+                '--fadein-time=300',               # 300ms fade in
+                '--fadeout-time=300',              # 300ms fade out
+                '--fadeout-type=1',                # Linear fade out
+                '--fadein-type=1',                 # Linear fade in
+                '--compressor-rms-peak=0.2',       # Compressor settings
+                '--compressor-attack=20.0',        # Faster attack to catch transients
+                '--compressor-release=300.0',      # Slower release for smoother transitions
+                '--compressor-threshold=-20.0',    # More aggressive threshold
+                '--compressor-ratio=4.0',
                 '--compressor-knee=2.0',
-                '--compressor-makeup-gain=7.0',
-                '--norm-max-level=90.0',              # Set maximum normalization level
-                '--sout-keep',                        # Keep stream output
+                '--compressor-makeup-gain=5.0',    # Slightly reduced makeup gain
+                '--norm-max-level=85.0',           # Slightly reduced normalization level
+                '--audio-desync=50',               # Small audio buffer to prevent pops
+                '--sout-keep',                     # Keep stream output
                 stream_url
             ]
             vlc_process = subprocess.Popen(
