@@ -1,10 +1,10 @@
-from src.utils.logger import write_current_song, write_played_song
+from utils.logger import write_current_song, write_played_song
 import yt_dlp, subprocess, sys, time, logging, concurrent.futures
 
-from src.song import Song
+from song import Song
 
-vlc_process = None # Variable to represent the actual current vlc process, Essential for doing things like sending commands
-audio_url_cache = {} # Cache for Extracted Audio Urls from the videos
+vlc_process = None  # Variable to represent the actual current vlc process, Essential for doing things like sending commands
+audio_url_cache = {}  # Cache for Extracted Audio Urls from the videos
 CACHE_SIZE = 5 
 
 # Use yt-dlp to extract the direct audio URL with highest quality settings
@@ -41,7 +41,7 @@ def skip_playback():
     """Skips the current VLC playback to the next song in the queue."""
     global vlc_process
     if vlc_process and vlc_process.poll() is None:
-        send_vlc_command('stop')
+        send_vlc_command('next')  # Use 'next' to skip to the next in playlist instead of stopping
 
 def prefetch_audio_urls(queue, queue_condition):
     while True:
@@ -69,9 +69,8 @@ def extract_audio_url(song: Song) -> str:
         stream_url = info['url']
     return stream_url
     
-def scan_queue(queue: list, queue_condition):
+def scan_queue(queue, queue_condition):
     global vlc_process
-    global currently_playing_song
     while True:
         with queue_condition:
             while queue.empty():
@@ -96,37 +95,31 @@ def scan_queue(queue: list, queue_condition):
             else:
                 raise Exception("Unsupported OS for VLC playback")
 
-            cmd = [
-                vlc_cmd,
-                '--intf', 'rc',
-                '--no-video',
-                '--play-and-exit',
-                '--audio-time-stretch',            # Enable time stretching for smoother transitions
-                '--audio-filter=compressor:normvol:fadeout:fadein',  # Add fade effects
-                '--fadein-time=300',               # 300ms fade in
-                '--fadeout-time=300',              # 300ms fade out
-                '--fadeout-type=1',                # Linear fade out
-                '--fadein-type=1',                 # Linear fade in
-                '--compressor-rms-peak=0.2',       # Compressor settings
-                '--compressor-attack=20.0',        # Faster attack to catch transients
-                '--compressor-release=300.0',      # Slower release for smoother transitions
-                '--compressor-threshold=-20.0',    # More aggressive threshold
-                '--compressor-ratio=4.0',
-                '--compressor-knee=2.0',
-                '--compressor-makeup-gain=5.0',    # Slightly reduced makeup gain
-                '--norm-max-level=85.0',           # Slightly reduced normalization level
-                '--audio-desync=50',               # Small audio buffer to prevent pops
-                '--sout-keep',                     # Keep stream output
-                stream_url
-            ]
-            vlc_process = subprocess.Popen(
-                cmd,
-                stdin=subprocess.PIPE,
-                # stdout=subprocess.DEVNULL,
-                # stderr=subprocess.DEVNULL
-            )
-            vlc_process.wait()
-            vlc_process = None
-            write_current_song(None)
+            if vlc_process is None or vlc_process.poll() is not None:
+                # Start VLC for the first song or if it crashed
+                cmd = [
+                    vlc_cmd,
+                    '--intf', 'rc',
+                    '--no-video',
+                    '--audio-time-stretch',            # Enable time stretching for smoother transitions
+                    '--audio-filter=compressor:normvol',  # Valid filters for quality
+                    '--sout-keep',                     # Keep stream output
+                    stream_url
+                ]
+                vlc_process = subprocess.Popen(
+                    cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,  # Suppress VLC stdout for cleaner logs
+                    stderr=subprocess.DEVNULL   # Suppress VLC stderr for cleaner logs
+                )
+                # Give VLC a moment to start
+                time.sleep(1)
+            else:
+                # Enqueue subsequent songs via RC
+                send_vlc_command(f'add {stream_url}')
         except Exception as e:
             logging.error(f"Error playing song: {e}")
+            # If error, reset process for next attempt
+            if vlc_process:
+                vlc_process.terminate()
+                vlc_process = None

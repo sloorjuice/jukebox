@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 import time, threading, shutil, sys, subprocess, platform, queue, logging
 import json, os
 
-from src.utils.logger import write_current_song
-from src.song import Song
-from src.media_scanner import scan_queue, prefetch_audio_urls
+from utils.logger import write_current_song
+from song import Song
+from media_scanner import scan_queue, prefetch_audio_urls
 
 song_queue = queue.Queue() # Use a python Queue instead of a list
 queue_condition = threading.Condition() 
