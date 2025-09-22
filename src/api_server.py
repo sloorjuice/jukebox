@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import json, os
 import socket
 
-from src.main import add_song_to_queue, set_clean_mode, get_clean_mode
+from src.main import add_song_to_queue, set_clean_mode, get_clean_mode, song_queue
 from src.media_scanner import pause_playback, skip_playback
 from src.utils.logger import write_queued_song, write_current_restriction_mode
 from fastapi.middleware.cors import CORSMiddleware
@@ -101,15 +101,18 @@ def toggle_clean_mode(toggle_clean_mode_request: ToggleCleanModeRequest):
     return {"status": "Toggled", "clean_mode": toggle_clean_mode_request.prompt}
 
 @app.get("/queue", response_model=list[QueueSong])
-def get_queue(queue_path: str = Depends(get_queue_path)):
-    try:
-        with open(queue_path, "r") as f:
-            data = json.load(f)
-        return [QueueSong(**item) for item in data]
-    except FileNotFoundError:
-        return []
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error reading queue file: {e}")
+def get_queue():
+    # Return the actual queue state, not the log file
+    songs = []
+    with song_queue.mutex:
+        for song in list(song_queue.queue):
+            songs.append({
+                "name": song.name,
+                "author": song.author,
+                "duration": song.duration,
+                "url": song.url
+            })
+    return songs
 
 @app.get("/currentlyPlayingSong", response_model=CurrentlyPlayingResponse)
 def get_currently_playing(current_song_path: str = Depends(get_current_song_path)):
