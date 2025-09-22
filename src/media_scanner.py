@@ -6,7 +6,8 @@ from typing import Optional
 
 from src.song import Song
 
-vlc_process = None  # Variable to represent the actual current vlc process
+# Global variables
+vlc_process = None
 logfile_handle = None
 
 # Thread-safe LRU cache for extracted audio URLs
@@ -32,9 +33,7 @@ ydl_opts = {
 }
 
 # VLC volume settings (256 == 100% in VLC RC). Clamp to reasonable maximum.
-#MAX_VLC_VOLUME = 512  # allow up to 200% if desired; change with caution
 MAX_VLC_VOLUME = 384  # 150% volume (256 == 100%)
-#MAX_VLC_VOLUME = 256  # 100% volume (do not exceed without care)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -73,9 +72,20 @@ def ensure_vlc_running() -> bool:
     """Make sure VLC is running and restart it if needed."""
     global vlc_process, logfile_handle
 
-    # If already running and alive, nothing to do
     if vlc_process and vlc_process.poll() is None:
         return True
+
+    if vlc_process:
+        try:
+            vlc_process.terminate()
+            vlc_process.wait(timeout=2)
+        except (subprocess.TimeoutExpired, Exception):
+            vlc_process.kill()
+        vlc_process = None
+    
+    if logfile_handle and not logfile_handle.closed:
+        logfile_handle.close()
+        logfile_handle = None
 
     vlc_cmd = find_vlc_binary()
     if not vlc_cmd:
@@ -88,6 +98,7 @@ def ensure_vlc_running() -> bool:
     cmd = [
         vlc_cmd,
         '--intf', 'rc',
+        '--rc-fake-tty',
         '--no-video',
         '--audio-time-stretch',
         '--audio-filter=compressor:normvol',
@@ -95,8 +106,6 @@ def ensure_vlc_running() -> bool:
         '--sout-keep'
     ]
 
-    # Linux: force PulseAudio backend and increase PulseAudio latency to reduce pops
-    # (keeps device open longer / reduces underruns when switching streams).
     env = None
     if sys.platform.startswith('linux'):
         cmd.extend(['--aout', 'pulse'])
@@ -105,22 +114,16 @@ def ensure_vlc_running() -> bool:
 
     try:
         logging.info(f"Starting VLC process using: {vlc_cmd}")
-        logs_dir = os.path.join(os.path.dirname(__file__), "logs")
-        os.makedirs(logs_dir, exist_ok=True)
-        logfile_path = os.path.join(logs_dir, "vlc.log")
-        # keep logfile open for lifetime of process
-        logfile_handle = open(logfile_path, "ab")
         vlc_process = subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
-            stdout=logfile_handle,
-            stderr=logfile_handle,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             env=env
         )
-        # Give VLC a moment to initialize
         time.sleep(1.5)
-        # Ensure volume at default high level
         set_vlc_volume(MAX_VLC_VOLUME)
+        logging.info("VLC process started successfully.")
         return True
     except Exception as e:
         logging.error(f"Failed to start VLC: {e}")
@@ -162,7 +165,7 @@ def prefetch_audio_urls(queue, queue_condition):
         try:
             with queue_condition:
                 to_prefetch = list(queue.queue)[:CACHE_SIZE]
-
+            
             if to_prefetch:
                 logging.debug(f"Prefetching URLs for up to {len(to_prefetch)} songs")
                 with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
@@ -175,20 +178,13 @@ def prefetch_audio_urls(queue, queue_condition):
                         if not cached and not already_in_progress:
                             with in_progress_lock:
                                 in_progress_extractions.add(song)
-                            futures.append(executor.submit(_prefetch_worker, song))
+                            futures.append(executor.submit(extract_and_cache_url, song))
                     if futures:
                         concurrent.futures.wait(futures, timeout=30)
             time.sleep(1)
         except Exception as e:
             logging.error(f"Error in prefetch thread: {e}")
             time.sleep(2)
-
-def _prefetch_worker(song: Song):
-    try:
-        extract_and_cache_url(song)
-    finally:
-        with in_progress_lock:
-            in_progress_extractions.discard(song)
 
 def extract_and_cache_url(song: Song):
     """Extract and cache audio URL for a song (non-blocking callers should use prefetch)."""
@@ -210,34 +206,27 @@ def _choose_best_format(info: dict) -> Optional[str]:
     if not info:
         return None
 
-    # If extractor returns direct URL (single format)
     if 'url' in info and not info.get('is_live', False):
         return info['url']
 
-    # Look into formats
     formats = info.get('formats') or info.get('requested_formats') or []
     if not formats:
         return None
 
-    # Filter audio-only or video formats that have an acodec
     audio_formats = []
     for f in formats:
-        # prefer entries with 'acodec' and a 'url'
         if not f.get('url'):
             continue
         acodec = f.get('acodec')
-        # If it's audio-only or has an audio codec, consider it.
         if acodec and acodec != 'none':
             audio_formats.append(f)
         else:
-            # Some formats don't show acodec but have tbr/abr - still consider
             if f.get('abr') or f.get('tbr'):
                 audio_formats.append(f)
 
     if not audio_formats:
         return None
 
-    # Rank by abr -> tbr -> filesize
     def score(f):
         return (
             float(f.get('abr') or f.get('tbr') or 0.0),
@@ -258,12 +247,30 @@ def extract_audio_url(song: Song) -> Optional[str]:
                     return url
                 else:
                     logging.debug(f"No direct stream URL found in info for {song.name}: keys={list(info.keys()) if isinstance(info, dict) else 'N/A'}")
-            # small backoff before retry
             time.sleep(1 + attempt)
         except Exception as e:
             logging.error(f"Error extracting URL (attempt {attempt+1}/3) for {song.name}: {e}")
             time.sleep(1 + attempt)
     return None
+
+def _is_vlc_playing():
+    """
+    Checks if VLC is currently playing a track by sending a dummy command
+    and checking for a response on stdout.
+    """
+    global vlc_process
+    if not vlc_process or vlc_process.poll() is not None:
+        return False
+    try:
+        # Send a command to get some output
+        vlc_process.stdin.write(b'status\n')
+        vlc_process.stdin.flush()
+        # Read a line from the output to see if it's "playing"
+        output = vlc_process.stdout.readline().decode('utf-8')
+        return "state playing" in output.strip().lower()
+    except Exception as e:
+        logging.error(f"Error checking VLC status: {e}")
+        return False
 
 def scan_queue(queue, queue_condition):
     """Main function that scans the queue and plays songs."""
@@ -272,14 +279,19 @@ def scan_queue(queue, queue_condition):
     logging.info("Starting queue scanner thread")
     while True:
         try:
-            # Acquire next song from queue
+            # Check if VLC is playing or if the queue is empty. Wait if either is true.
+            is_playing = _is_vlc_playing()
+            if is_playing or queue.empty():
+                time.sleep(1)
+                if not is_playing:
+                    write_current_song(None, active=False)
+                continue
+
+            # If we reach this point, VLC is not playing and the queue is not empty.
             with queue_condition:
-                while queue.empty():
-                    logging.info("Queue is empty, waiting for songs...")
-                    queue_condition.wait()
                 song_to_play = queue.get()
                 write_played_song(song_to_play)
-
+            
             logging.info(f"Preparing to play: {song_to_play.name}")
             current_playing_song = song_to_play
 
@@ -288,7 +300,6 @@ def scan_queue(queue, queue_condition):
                 time.sleep(5)
                 continue
 
-            # Try cache first (use and remove to avoid reuse beyond intended)
             with cache_lock:
                 stream_url = audio_url_cache.pop(song_to_play, None)
 
@@ -300,31 +311,17 @@ def scan_queue(queue, queue_condition):
                 logging.error(f"Failed to get URL for {song_to_play.name}, skipping")
                 continue
 
-            logging.info(f"Enqueuing and playing {song_to_play.name}")
-            # Enqueue and play the specific URL
-            if send_vlc_command(f'enqueue {stream_url}'):
-                # ensure playback and loud volume
-                send_vlc_command('play')
+            logging.info(f"Adding and playing {song_to_play.name}")
+            if send_vlc_command(f'add {stream_url}'):
                 set_vlc_volume(MAX_VLC_VOLUME)
                 write_current_song(song_to_play, active=True)
                 logging.info(f"Now playing: {song_to_play.name}")
 
-                # Wait for the song duration in small intervals so thread remains responsive.
-                duration = getattr(song_to_play, "duration", None) or 0
-                if duration <= 0:
-                    duration = 10  # fallback if missing
-                elapsed = 0.0
-                poll_interval = 0.5
-                while elapsed < duration:
-                    time.sleep(poll_interval)
-                    elapsed += poll_interval
-                write_current_song(None)
             else:
                 logging.error(f"Failed to add song to VLC: {song_to_play.name}")
 
         except Exception as e:
             logging.error(f"Error in queue scanner: {e}")
-            # Try to cleanly restart VLC and continue
             try:
                 if vlc_process:
                     vlc_process.terminate()
