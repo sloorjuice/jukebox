@@ -1,4 +1,3 @@
-# Create/update: /etc/systemd/system/jukebox-backend.service
 [Unit]
 Description=Jukebox API Server
 After=network.target sound.target
@@ -10,15 +9,15 @@ Group=audio
 WorkingDirectory=/home/jukebox/jukebox
 Environment=PATH=/home/jukebox/jukebox/venv/bin:/usr/local/bin:/usr/bin:/bin
 Environment=PYTHONPATH=/home/jukebox/jukebox
-Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
-Environment=XDG_RUNTIME_DIR=/run/user/1000
-ExecStart=/home/jukebox/jukebox/venv/bin/uvicorn src.api_server:app --host 0.0.0.0 --port 8000
+Environment=VIRTUAL_ENV=/home/jukebox/jukebox/venv
+Environment=PULSE_SERVER=unix:/run/user/%i/pulse/native
+Environment=XDG_RUNTIME_DIR=/run/user/%i
+ExecStart=/home/jukebox/jukebox/venv/bin/python -m uvicorn src.api_server:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=3
 
 # Audio-specific settings
-SupplementaryGroups=audio pulse-access
-PAMName=login
+SupplementaryGroups=audio
 
 [Install]
 WantedBy=multi-user.target
