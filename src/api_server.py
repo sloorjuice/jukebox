@@ -1,13 +1,57 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 import json, os
 import socket
 
 from src.main import add_song_to_queue, set_clean_mode, get_clean_mode, song_queue
-from src.media_scanner import pause_playback, skip_playback, get_current_playing_song, get_pause_status
-from src.utils.logger import write_queued_song, write_current_restriction_mode
+from src.media_scanner import pause_playback, skip_playback
+from src.utils.logger import write_current_restriction_mode
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
+from typing import Optional, List
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+        
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        
+    def disconnect(self, websocket: WebSocket):
+        try:
+            self.active_connections.remove(websocket)
+        except ValueError:
+            pass
+        
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            await connection.send_json(message)
+            
+manager = ConnectionManager()
+
+def get_queue_data():
+    with song_queue.mutex:
+        queue = [
+            {
+                "name": song.name,
+                "author": song.author,
+                "duration": song.duration,
+                "url": song.url,
+                "search_prompt": getattr(song, 'search_prompt', None)
+            }
+            for song in list(song_queue.queue)
+        ]
+    return queue
+
+def get_current_song_data():
+    try:
+        with open(get_current_song_path(), "r") as f:
+            data = json.load(f)
+            if data is None:
+                return None
+            return data
+    except Exception:
+        return None
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -82,8 +126,15 @@ class CurrentlyPlayingResponse(BaseModel):
     active: bool
     paused: bool
 
+async def broadcast_state():
+    await manager.broadcast({
+        "type": "queue_update",
+        "queue": get_queue_data(),
+        "current_song": get_current_song_data(),
+    })
+
 @app.post("/request_song", response_model=SongResponse)
-def request_song(song_request: SongRequest):
+async def request_song(song_request: SongRequest):
     from src.main import search_song, Song
     clean_mode = get_clean_mode()
     url, name, duration, author = search_song(song_request.prompt, restricted=clean_mode)
@@ -91,6 +142,7 @@ def request_song(song_request: SongRequest):
         raise HTTPException(status_code=404, detail="Song not found")
     song = Song(name, url, duration, author)
     add_song_to_queue(song, song_request.prompt)
+    await broadcast_state()
     return {"status": "added", "song": name, "author": author}
 
 @app.post("/toggle_clean_mode", response_model=ToggleRestrictionResponse)
@@ -131,11 +183,22 @@ def get_currently_playing(current_song_path: str = Depends(get_current_song_path
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/pauseToggle")
-def pause_toggle():
+async def pause_toggle():
     pause_playback()
+    await broadcast_state()
     return {"status": "toggled pause/play"}
 
 @app.post("/skip")
-def skip():
+async def skip():
     skip_playback()
+    await broadcast_state()
     return {"status": "skipped current song"}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # Keep connection alive
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
