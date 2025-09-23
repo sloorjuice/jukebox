@@ -55,8 +55,14 @@ source venv/bin/activate
 uvicorn src.api_server:app --reload --host 0.0.0.0 --port 8000 &
 UVICORN_PID=$!
 
-# start frontend (run from examples/example-frontend) in background
-npm --prefix examples/example-frontend run dev &
+# Build frontend if not already built
+if [ ! -d "examples/example-frontend/.next" ]; then
+  echo "Building frontend..."
+  npm --prefix examples/example-frontend run build
+fi
+
+# Start frontend in production mode
+npm --prefix examples/example-frontend run start &
 FRONT_PID=$!
 
 # ensure child processes are killed on exit
