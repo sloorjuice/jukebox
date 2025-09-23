@@ -341,6 +341,9 @@ def scan_queue(queue, queue_condition):
             
             logging.info(f"Preparing to play: {song_to_play.name}")
 
+            # Immediately write the song as the next one to play, but not yet active.
+            write_current_song(song_to_play, active=False)
+
             if not ensure_vlc_running():
                 logging.error("Failed to ensure VLC is running, retrying in 5 seconds")
                 # Put the song back in the queue
@@ -373,7 +376,7 @@ def scan_queue(queue, queue_condition):
                 current_playing_song = song_to_play
                 song_end_time = time.time() + song_to_play.duration + 3  # Add 3 second buffer
                 
-                # Log the song as played and currently playing
+                # Log the song as played and update the current song to be active
                 write_played_song(song_to_play)
                 write_current_song(song_to_play, active=True)
                 
