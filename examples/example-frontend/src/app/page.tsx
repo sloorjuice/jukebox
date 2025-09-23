@@ -36,6 +36,17 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+
+    // Clear response after 30 seconds
+    useEffect(() => {
+    if (response) {
+      const timeout = setTimeout(() => {
+        setResponse(null);
+      }, 30000); // 30 seconds
+
+      return () => clearTimeout(timeout);
+    }
+  }, [response]);
   };
 
   const handleSkip = async () => {
