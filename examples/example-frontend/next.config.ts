@@ -16,7 +16,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  allowedDevOriginPattern: /^http:\/\/(localhost|127\.0\.0\.1|jukebox\.local)(:\d+)?\/?$/, //Allows any port
 };
 
 export default nextConfig;
