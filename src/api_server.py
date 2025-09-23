@@ -4,7 +4,7 @@ import json, os
 import socket
 
 from src.main import add_song_to_queue, set_clean_mode, get_clean_mode, song_queue
-from src.media_scanner import pause_playback, skip_playback, get_current_playing_song
+from src.media_scanner import pause_playback, skip_playback, get_current_playing_song, get_pause_status
 from src.utils.logger import write_queued_song, write_current_restriction_mode
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
@@ -80,6 +80,7 @@ class CurrentlyPlayingResponse(BaseModel):
     url: Optional[str]
     played_at: Optional[str]
     active: bool
+    paused: bool
 
 @app.post("/request_song", response_model=SongResponse)
 def request_song(song_request: SongRequest):
@@ -119,10 +120,13 @@ def get_currently_playing(current_song_path: str = Depends(get_current_song_path
         with open(current_song_path, "r") as f:
             data = json.load(f)
             if data is None:
-                return {"name": None, "author": None, "duration": None, "url": None, "played_at": None, "active": False}
+                return {"name": None, "author": None, "duration": None, "url": None, "played_at": None, "active": False, "paused": False}
+        # Ensure paused field exists in the response
+        if "paused" not in data:
+            data["paused"] = False
         return CurrentlyPlayingResponse(**data)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {"name": None, "author": None, "duration": None, "url": None, "played_at": None, "active": False}
+        return {"name": None, "author": None, "duration": None, "url": None, "played_at": None, "active": False, "paused": False}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

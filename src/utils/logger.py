@@ -10,7 +10,7 @@ CURRENT_RESTRICTION_MODE = os.path.join(os.path.dirname(__file__), "..", "logs",
 ALL_QUEUED_SONGS = os.path.join(os.path.dirname(__file__), "..", "logs", "all_queued_songs.json")
 ALL_PLAYED_SONGS = os.path.join(os.path.dirname(__file__), "..", "logs", "all_played_songs.json")
 
-def write_current_song(song, active: bool = False):
+def write_current_song(song, active: bool = False, paused: bool = False):
     os.makedirs(os.path.dirname(CURRENT_SONG), exist_ok=True)
     if song is None:
         data = None
@@ -21,7 +21,8 @@ def write_current_song(song, active: bool = False):
             "duration": song.duration,
             "url": song.url,
             "played_at": datetime.datetime.now().isoformat(),
-            "active": active  # Add active status
+            "active": active,  # Add active status
+            "paused": paused   # Add paused status
         }
     with open(CURRENT_SONG, "w") as f:
         json.dump(data, f, indent=2)

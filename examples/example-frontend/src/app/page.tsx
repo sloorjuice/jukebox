@@ -120,18 +120,22 @@ export default function Home() {
             <span className="font-semibold">{currentSong.name}</span> by{" "}
             <span className="italic">{currentSong.author}</span>
             {" "}
-            <span className="text-gray-400 text-xs">
-              ({Math.floor(currentSong.duration / 60)}:{(currentSong.duration % 60).toString().padStart(2, "0")})
-            </span>
+            {currentSong.duration && (
+              <span className="text-gray-400 text-xs">
+                ({Math.floor(currentSong.duration / 60)}:{(currentSong.duration % 60).toString().padStart(2, "0")})
+              </span>
+            )}
             {" "}
-            <a
-              href={currentSong.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-300 underline ml-2"
-            >
-              Link
-            </a>
+            {currentSong.url && (
+              <a
+                href={currentSong.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-300 underline ml-2"
+              >
+                Link
+              </a>
+            )}
             {/* Active status indicator */}
             <span className="ml-3">
               {currentSong.active ? (
@@ -181,7 +185,12 @@ export default function Home() {
           disabled={!currentSong || !currentSong.active || pauseLoading}
           style={{ minWidth: 110 }}
         >
-          {pauseLoading ? "Pausing..." : "Pause / Play"}
+          {pauseLoading 
+            ? "Loading..." 
+            : currentSong?.paused 
+              ? "Play" 
+              : "Pause"
+          }
         </button>
         <button
           className={`px-4 py-2 rounded font-semibold transition text-base shadow
@@ -217,7 +226,11 @@ export default function Home() {
               <li key={idx} className="py-2 px-2 hover:bg-gray-200 rounded transition flex flex-col sm:flex-row sm:justify-between">
                 <span className="font-medium">{song.name}</span>
                 <span className="text-gray-300 text-sm">{song.author}</span>
-                <span className="text-gray-400 text-xs">{Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}</span>
+                {song.duration && (
+                  <span className="text-gray-400 text-xs">
+                    {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "0")}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

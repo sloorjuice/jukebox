@@ -11,12 +11,13 @@ export interface QueueSong {
 }
 
 export interface CurrentSong {
-  name: string;
-  author: string;
-  duration: number;
-  url: string;
-  played_at: string;
+  name: string | null;
+  author: string | null;
+  duration: number | null;
+  url: string | null;
+  played_at: string | null;
   active: boolean;
+  paused: boolean; // Make sure this field exists
 }
 
 export interface SkipResponse {
