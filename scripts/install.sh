@@ -7,6 +7,8 @@ set -e  # Exit on any error
 
 echo "🎵 Setting up SloorJuke..."
 
+sudo chown -R $(whoami) examples/example-frontend/.next
+
 # Install frontend dependencies and build
 echo "🌐 Installing frontend dependencies and building production site..."
 cd examples/example-frontend
