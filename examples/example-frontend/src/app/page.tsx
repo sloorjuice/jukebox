@@ -36,9 +36,10 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
 
-    // Clear response after 30 seconds
-    useEffect(() => {
+  // Move the useEffect outside of handleSubmit - Clear response after 30 seconds
+  useEffect(() => {
     if (response) {
       const timeout = setTimeout(() => {
         setResponse(null);
@@ -47,7 +48,6 @@ export default function Home() {
       return () => clearTimeout(timeout);
     }
   }, [response]);
-  };
 
   const handleSkip = async () => {
     setSkipLoading(true);

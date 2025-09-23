@@ -105,16 +105,35 @@ def ensure_vlc_running() -> bool:
         '--audio-filter=compressor:normvol',
         '--gain=2.0',
         '--sout-keep',
-        '--no-loop',           # Disable looping
-        '--no-repeat',         # Disable repeat
-        '--play-and-exit'      # Exit after playing (but we manage playlist manually)
+        '--no-loop',
+        '--no-repeat',
+        '--play-and-exit'
     ]
 
     env = None
     if sys.platform.startswith('linux'):
-        cmd.extend(['--aout', 'pulse'])
+        # Try multiple audio output methods for better compatibility
+        audio_outputs = ['pulse', 'alsa', 'oss']
+        for aout in audio_outputs:
+            test_cmd = cmd + ['--aout', aout, '--intf', 'dummy', '--play-and-exit', '--run-time=1']
+            try:
+                test_process = subprocess.run(test_cmd, capture_output=True, timeout=5)
+                if test_process.returncode == 0:
+                    cmd.extend(['--aout', aout])
+                    logging.info(f"Using audio output: {aout}")
+                    break
+            except (subprocess.TimeoutExpired, Exception):
+                continue
+        else:
+            # Fallback to ALSA if nothing works
+            cmd.extend(['--aout', 'alsa'])
+            logging.warning("Using ALSA as fallback audio output")
+            
         env = os.environ.copy()
+        # Set up environment for audio access
         env.setdefault('PULSE_LATENCY_MSEC', '60')
+        env.setdefault('ALSA_PCM_CARD', '0')
+        env.setdefault('ALSA_PCM_DEVICE', '0')
 
     try:
         logging.info(f"Starting VLC process using: {vlc_cmd}")
@@ -313,11 +332,42 @@ def _check_vlc_status() -> str:
     
     return "unknown"
 
+def test_audio_system():
+    """Test if audio system is accessible and working."""
+    if not sys.platform.startswith('linux'):
+        return True
+        
+    # Test PulseAudio
+    try:
+        result = subprocess.run(['pactl', 'info'], capture_output=True, timeout=5)
+        if result.returncode == 0:
+            logging.info("PulseAudio is available")
+            return True
+    except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+        logging.warning("PulseAudio not accessible")
+    
+    # Test ALSA
+    try:
+        result = subprocess.run(['aplay', '-l'], capture_output=True, timeout=5)
+        if result.returncode == 0:
+            logging.info("ALSA is available")
+            return True
+    except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+        logging.warning("ALSA not accessible")
+    
+    logging.error("No audio system detected or accessible")
+    return False
+
 def scan_queue(queue, queue_condition):
     """Main function that scans the queue and plays songs."""
     global vlc_process, current_playing_song, song_end_time, is_paused
 
     logging.info("Starting queue scanner thread")
+    
+    # Test audio system first
+    if not test_audio_system():
+        logging.error("Audio system not accessible - check user permissions and audio group membership")
+    
     while True:
         try:
             # Check if current song has finished
