@@ -132,6 +132,14 @@ export default function Home() {
             >
               Link
             </a>
+            {/* Active status indicator */}
+            <span className="ml-3">
+              {currentSong.active ? (
+                <span title="Now Playing" className="text-green-500 text-xl">✅</span>
+              ) : (
+                <span title="Queued/Loading" className="text-red-500 text-xl">❌</span>
+              )}
+            </span>
           </span>
         ) : (
           "None"
