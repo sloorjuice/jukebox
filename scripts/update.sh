@@ -2,10 +2,12 @@
 
 set -e
 
+sudo chown -R $(whoami) examples/example-frontend/.next
+
 echo "Updating Repository..."
 git pull
 
-echo "Rebuilding Backend..."
+echo "Rebuilding Frontend..."
 cd examples/example-frontend/
 npm install
 npm run build
