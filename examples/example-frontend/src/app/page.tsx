@@ -149,29 +149,30 @@ export default function Home() {
           "None"
         )}
       </p>
-      <input
-        type="text"
-        value={searchPrompt}
-        onChange={handleChange}
-        placeholder="Enter Song Name..."
-        className="border rounded px-4 py-2 mb-4 w-full max-w-md"
-      />
-
-      {/* Centered Play Song button */}
-      <div className="flex justify-center mb-4 w-full">
-        <button
-          className={`px-6 py-2 rounded font-semibold transition text-lg shadow
-            ${loading
-              ? "bg-blue-300 text-white cursor-not-allowed"
-              : "bg-blue-500 text-white hover:bg-blue-600"}
-          `}
-          onClick={handleSubmit}
-          disabled={loading}
-          style={{ minWidth: 140 }}
-        >
-          {loading ? "Loading..." : "Play Song!"}
-        </button>
-      </div>
+      {/* Wrap input and button in a form */}
+      <form onSubmit={handleSubmit} className="w-full max-w-md">
+        <input
+          type="text"
+          value={searchPrompt}
+          onChange={handleChange}
+          placeholder="Enter Song Name..."
+          className="border rounded px-4 py-2 mb-4 w-full"
+        />
+        <div className="flex justify-center mb-4 w-full">
+          <button
+            type="submit"
+            className={`px-6 py-2 rounded font-semibold transition text-lg shadow
+              ${loading
+                ? "bg-blue-300 text-white cursor-not-allowed"
+                : "bg-blue-500 text-white hover:bg-blue-600"}
+            `}
+            disabled={loading}
+            style={{ minWidth: 140 }}
+          >
+            {loading ? "Loading..." : "Play Song!"}
+          </button>
+        </div>
+      </form>
 
       {/* Pause/Play and Skip buttons side-by-side */}
       <div className="flex gap-4 justify-center mb-4 w-full">
