@@ -16,6 +16,7 @@ export interface CurrentSong {
   duration: number;
   url: string;
   played_at: string;
+  active: boolean;
 }
 
 export interface SkipResponse {
