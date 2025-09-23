@@ -49,7 +49,21 @@ if [ -n "$LOCAL_DOMAIN" ]; then
 fi
 echo "------------------------------------------------------"
 
+# Check if virtual environment exists
+if [ ! -d "venv" ]; then
+  echo "❌ Virtual environment not found. Please run ./scripts/install.sh first."
+  exit 1
+fi
+
 source venv/bin/activate
+
+# Check if ports 8000 or 3000 are in use
+if lsof -i :8000 | grep LISTEN; then
+  echo "⚠️  Port 8000 is already in use. The API server may not start correctly."
+fi
+if lsof -i :3000 | grep LISTEN; then
+  echo "⚠️  Port 3000 is already in use. The frontend may not start correctly."
+fi
 
 # start backend in background
 uvicorn src.api_server:app --reload --host 0.0.0.0 --port 8000 &

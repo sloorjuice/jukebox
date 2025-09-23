@@ -17,6 +17,29 @@ cd ../../
 echo ""
 echo "🎉 Installation complete!"
 
+# Install VLC
+echo "🎬 Installing VLC media player..."
+
+if command -v vlc &> /dev/null; then
+    echo "✅ VLC is already installed."
+else
+    echo "VLC is not installed. Installing..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        if ! command -v brew &> /dev/null; then
+            echo "❌ Homebrew not found. Please install Homebrew first: https://brew.sh/"
+            exit 1
+        fi
+        brew install --cask vlc
+    elif [[ -f /etc/debian_version ]]; then
+        # Debian/Ubuntu
+        sudo apt-get update
+        sudo apt-get install -y vlc
+    else
+        echo "⚠️  Automatic VLC installation not supported on this OS. Please install VLC manually."
+    fi
+fi
+
 # Check if Python is available
 if ! command -v python3 &> /dev/null && ! command -v python &> /dev/null; then
     echo "❌ Python is required but not installed. Please install Python 3.7+ first."

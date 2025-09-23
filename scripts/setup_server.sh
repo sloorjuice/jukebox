@@ -1,0 +1,1 @@
+echo "setting up services..."
