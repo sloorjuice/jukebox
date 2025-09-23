@@ -7,6 +7,16 @@ set -e  # Exit on any error
 
 echo "🎵 Setting up SloorJuke..."
 
+# Install frontend dependencies and build
+echo "🌐 Installing frontend dependencies and building production site..."
+cd examples/example-frontend
+npm install
+npm run build
+cd ../../
+
+echo ""
+echo "🎉 Installation complete!"
+
 # Check if Python is available
 if ! command -v python3 &> /dev/null && ! command -v python &> /dev/null; then
     echo "❌ Python is required but not installed. Please install Python 3.7+ first."

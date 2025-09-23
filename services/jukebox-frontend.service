@@ -1,0 +1,15 @@
+[Unit]
+Description=Jukebox Frontend
+After=network.target
+
+[Service]
+Type=simple
+User=jukebox
+WorkingDirectory=/home/jukebox/jukebox/examples/example-frontend
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
