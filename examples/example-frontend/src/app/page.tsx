@@ -173,24 +173,24 @@ export default function Home() {
       <div className="flex gap-4 justify-center mb-4 w-full">
         <button
           className={`px-4 py-2 rounded font-semibold transition text-base shadow
-            ${!currentSong || pauseLoading
+            ${!currentSong || !currentSong.active || pauseLoading
               ? "bg-gray-400 text-white cursor-not-allowed"
               : "bg-yellow-500 text-white hover:bg-yellow-600 cursor-pointer"}
           `}
           onClick={handlePause}
-          disabled={!currentSong || pauseLoading}
+          disabled={!currentSong || !currentSong.active || pauseLoading}
           style={{ minWidth: 110 }}
         >
           {pauseLoading ? "Pausing..." : "Pause / Play"}
         </button>
         <button
           className={`px-4 py-2 rounded font-semibold transition text-base shadow
-            ${!currentSong || skipLoading
+            ${!currentSong || !currentSong.active || skipLoading
               ? "bg-gray-400 text-white cursor-not-allowed"
               : "bg-red-500 text-white hover:bg-red-600 cursor-pointer"}
           `}
           onClick={handleSkip}
-          disabled={!currentSong || skipLoading}
+          disabled={!currentSong || !currentSong.active || skipLoading}
           style={{ minWidth: 110 }}
         >
           {skipLoading ? "Skipping..." : "Skip"}
