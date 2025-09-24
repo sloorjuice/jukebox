@@ -2,7 +2,11 @@
 
 set -e
 
+source venv/bin/activate
+pip install -r requirements.txt
+
 sudo chown -R $(whoami) examples/example-frontend/.next
+sudo usermod -a -G audio jukebox
 
 echo "Updating Repository..."
 git pull

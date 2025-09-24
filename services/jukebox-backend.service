@@ -10,8 +10,10 @@ WorkingDirectory=/home/jukebox/jukebox
 Environment=PATH=/home/jukebox/jukebox/venv/bin:/usr/local/bin:/usr/bin:/bin
 Environment=PYTHONPATH=/home/jukebox/jukebox
 Environment=VIRTUAL_ENV=/home/jukebox/jukebox/venv
-Environment=PULSE_SERVER=unix:/run/user/%i/pulse/native
-Environment=XDG_RUNTIME_DIR=/run/user/%i
+Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=ALSA_PCM_CARD=0
+Environment=ALSA_PCM_DEVICE=0
 ExecStart=/home/jukebox/jukebox/venv/bin/python -m uvicorn src.api_server:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=3

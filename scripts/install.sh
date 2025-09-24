@@ -7,7 +7,8 @@ set -e  # Exit on any error
 
 echo "🎵 Setting up SloorJuke..."
 
-sudo chown -R $(whoami) examples/example-frontend/.next
+# Ensure proper ownership
+sudo chown -R $(whoami) examples/example-frontend/.next || true
 
 # Install frontend dependencies and build
 echo "🌐 Installing frontend dependencies and building production site..."
@@ -36,7 +37,11 @@ else
     elif [[ -f /etc/debian_version ]]; then
         # Debian/Ubuntu
         sudo apt-get update
-        sudo apt-get install -y vlc
+        sudo apt-get install -y vlc alsa-utils pulseaudio-utils
+        # Add jukebox user to audio group if it exists
+        if id "jukebox" &>/dev/null; then
+            sudo usermod -a -G audio jukebox
+        fi
     else
         echo "⚠️  Automatic VLC installation not supported on this OS. Please install VLC manually."
     fi

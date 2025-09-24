@@ -22,15 +22,18 @@ in_progress_lock = threading.Lock()
 
 # Best-effort yt-dlp options for highest-quality audio extraction
 ydl_opts = {
-    'format': 'bestaudio/best',
+    'format': 'bestaudio[ext=m4a]/bestaudio/best',
     'quiet': True,
     'skip_download': True,
     'retries': 5,
-    'socket_timeout': 20,
+    'socket_timeout': 30,
     'nocheckcertificate': True,
     'no_warnings': True,
-    # prefer IPv4 if some hosts have IPv6 issues
     'source_address': '0.0.0.0',
+    'cookiefile': None,
+    'extract_flat': False,
+    'writethumbnail': False,
+    'writeinfojson': False,
 }
 
 # VLC volume settings (256 == 100% in VLC RC). Clamp to reasonable maximum.

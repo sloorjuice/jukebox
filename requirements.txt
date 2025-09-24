@@ -1,7 +1,8 @@
 pytubefix
 yt_dlp
 fastapi
-uvicorn
+uvicorn[standard]
+websockets
 pydantic
 pytest
 httpx
