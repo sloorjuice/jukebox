@@ -29,7 +29,12 @@ fi
 # Install nginx if not present
 sudo apt-get install -y nginx
 
+# Remove default nginx site
+echo "Removing default nginx site..."
+sudo rm -f /etc/nginx/sites-enabled/default
+
 # Create a config for jukebox.local
+echo "Creating nginx configuration..."
 sudo tee /etc/nginx/sites-available/jukebox <<EOF
 server {
     listen 80;
@@ -44,6 +49,11 @@ server {
 EOF
 
 sudo ln -sf /etc/nginx/sites-available/jukebox /etc/nginx/sites-enabled/jukebox
+
+# Test nginx configuration
+echo "Testing nginx configuration..."
+sudo nginx -t
+
 sudo systemctl reload nginx
 
 echo "Enabling and starting avahi-daemon..."
@@ -56,8 +66,16 @@ sudo cp -f services/jukebox-backend.service /etc/systemd/system/jukebox-backend.
 sudo cp -f services/jukebox-frontend.service /etc/systemd/system/jukebox-frontend.service
 
 sudo systemctl daemon-reload
+sudo systemctl enable jukebox-frontend.service
+sudo systemctl enable jukebox-backend.service
 sudo systemctl start jukebox-frontend.service
 sudo systemctl start jukebox-backend.service
 
+# Check service status
+echo "Checking service status..."
+sudo systemctl status jukebox-frontend.service --no-pager
+sudo systemctl status jukebox-backend.service --no-pager
+
 echo "Setup complete!"
 echo "Your server should now be discoverable as http://jukebox.local on your local network."
+echo "If services failed to start, check logs with: sudo journalctl -u jukebox-frontend.service -f"
