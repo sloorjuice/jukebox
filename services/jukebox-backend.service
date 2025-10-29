@@ -4,21 +4,20 @@ After=network.target sound.target
 
 [Service]
 Type=simple
-User=jukebox
+# run as the desktop/login user that owns the audio session
+User=<LOGIN>
 Group=audio
-WorkingDirectory=/home/jukebox/jukebox
-Environment=PATH=/home/jukebox/jukebox/venv/bin:/usr/local/bin:/usr/bin:/bin
-Environment=PYTHONPATH=/home/jukebox/jukebox
-Environment=VIRTUAL_ENV=/home/jukebox/jukebox/venv
-Environment=PULSE_SERVER=unix:/run/user/1000/pulse/native
-Environment=XDG_RUNTIME_DIR=/run/user/1000
-Environment=ALSA_PCM_CARD=0
-Environment=ALSA_PCM_DEVICE=0
-ExecStart=/home/jukebox/jukebox/venv/bin/python -m uvicorn src.api_server:app --host 0.0.0.0 --port 8000
+WorkingDirectory=/home/<LOGIN>/jukebox
+Environment=PATH=/home/<LOGIN>/jukebox/venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONPATH=/home/<LOGIN>/jukebox
+Environment=VIRTUAL_ENV=/home/<LOGIN>/jukebox/venv
+# point to the login user's runtime and session bus (replace <UID> with that user's UID)
+Environment=PULSE_SERVER=unix:/run/user/<UID>/pulse/native
+Environment=XDG_RUNTIME_DIR=/run/user/<UID>
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/<UID>/bus
+ExecStart=/home/<LOGIN>/jukebox/venv/bin/python -m uvicorn src.api_server:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=3
-
-# Audio-specific settings
 SupplementaryGroups=audio
 
 [Install]
